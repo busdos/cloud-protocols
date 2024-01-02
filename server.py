@@ -1,20 +1,19 @@
 """
 Flask server and the SQLAlchemy database of the application.
 """
-from flask import Flask, request, jsonify
+from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
-from flask_marshmallow import Marshmallow
 
 import logging
 import os
 
 import db_model
+import routes_blueprint as routes_bp
 
 HOST = "0.0.0.0"
 DEBUG = True
 PORT = 8080
 LOGGING_FORMAT = '%(message)s'
-
 
 if __name__ == '__main__':
     # Configure logging
@@ -26,9 +25,11 @@ if __name__ == '__main__':
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///db.sqlite'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-    # Create the database and marshmallow objects
-    db = SQLAlchemy(app)
-    ma = Marshmallow(app)
+    # Register a simple hello world page as the root route
+    # [TODO] remove later
+    @app.route('/')
+    def hello_world():
+        return 'Hello, World!'
 
     # Default database url is the sqlite database in the instance folder
     db_url = f'sqlite:///{os.path.join(app.instance_path, "base.db")}'
@@ -45,12 +46,16 @@ if __name__ == '__main__':
 
     # Initialize the database and add the ability to reset it from
     # the command line
-    app.cli.add_command(db_model.reset_db_command)
-    db.init_app(app)
+    db_model.db.init_app(app)
     with app.app_context():
-        db.create_all()
+        db_model.db.create_all()
+    app.cli.add_command(db_model.reset_db_command)
     
-    # Register the blueprints
-    # [TODO] Add the blueprints
+    # Add routes of all the implemented protocols and register the blueprint.
+    # Adding a route is simply registering a function to be called for a
+    # specific HTTP request method and URL
+    routes = routes_bp.create_routes()
+    routes_bp.add_protocol_routes(routes_bp.bp, routes)
+    app.register_blueprint(routes_bp.bp, url_prefix='/protocols')
 
     app.run(host=HOST, port=PORT, debug=DEBUG)

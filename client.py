@@ -1,14 +1,18 @@
 import argparse
 
-import protocols as pr
+import protocols.oblivious_polynomial_evaluation as ope
+import protocols.garbled_circuit as gc
+import protocols.private_set_intersection as psi
+import protocols.oblivious_transfer_one_of_n as otn
 
-# [TODO] these should be bindings to protocol routes and
-# not protcols themselves
+# [TODO] these should be bindings to client-side protocol functions
+# (what client exectues as part of running the protocol with the server) and
+# not protocols themselves
 LIST_OF_PROTOCOLS = {
-    "one-of-n": pr.one_of_n,
-    "oblivious-polynomial-evaluation": pr.oblivious_polynomial_evaluation,
-    "garbled-circuit": pr.garbled_circuit,
-    "private-set-intersection": pr.private_set_intersection,
+    "otn": otn.one_of_n,
+    "ope": ope.oblivious_polynomial_evaluation,
+    "gc": gc.garbled_circuit,
+    "psi": psi.private_set_intersection,
 }
 
 PROTOCOL_CHOICE = list(LIST_OF_PROTOCOLS.keys())
@@ -16,7 +20,7 @@ PROTOCOL_CHOICE = list(LIST_OF_PROTOCOLS.keys())
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--p",
+        "-p",
         dest="protocol",
         choices=PROTOCOL_CHOICE,
         required=True)
@@ -26,4 +30,5 @@ def main():
     LIST_OF_PROTOCOLS[args.protocol](args.url)
 
 if __name__ == "__main__":
+    print("Starting client...")
     main()

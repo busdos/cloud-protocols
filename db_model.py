@@ -1,39 +1,41 @@
 from sqlalchemy.dialects.sqlite import JSON
 from sqlalchemy.schema import PrimaryKeyConstraint
-import flask_sqlalchemy as fsqla
+from flask_sqlalchemy import SQLAlchemy
 
 import click
 from flask.cli import with_appcontext
 
+db = SQLAlchemy()
+
 """
 User sessions table
 """
-class Session(fsqla.Model):
+class Session(db.Model):
     __tablename__ = 'sessions'
     __table_args__ = (
         PrimaryKeyConstraint('id'),
     )
-    id = fsqla.Column(fsqla.String, nullable=False)
-    data = fsqla.Column(JSON, nullable=False)
+    id = db.Column(db.String, nullable=False)
+    data = db.Column(JSON, nullable=False)
 
 """
 User session keys table
 """
-class SessionKeys(fsqla.Model):
+class SessionKeys(db.Model):
     __tablename__ = 'session_keys'
     __table_args__ = (
         PrimaryKeyConstraint('id', 'key_idx'),
     )
-    id = fsqla.Column(fsqla.String, nullable=False)
-    key_idx = fsqla.Column(fsqla.Integer, nullable=False)
-    key0_val = fsqla.Column(fsqla.String)
-    key1_val = fsqla.Column(fsqla.String)
+    id = db.Column(db.String, nullable=False)
+    key_idx = db.Column(db.Integer, nullable=False)
+    key0_val = db.Column(db.String)
+    key1_val = db.Column(db.String)
 
 """
 Command line function to clean the database and recreate the tables
 """
 @click.command("reset-db")
 @with_appcontext
-def reset_db_command(db):
-    db.drop_all()
-    db.create_all()
+def reset_db_command(database):
+    database.drop_all()
+    database.create_all()
