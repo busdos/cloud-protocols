@@ -1,0 +1,57 @@
+import hashlib
+
+#######################
+# Hashing-related utils
+#######################
+_HASH_FUNCTION = hashlib.sha3_512
+_HASH_LENGTH = _HASH_FUNCTION().digest_size
+
+
+def compute_hash(msg: bytes) -> bytes:
+    return _HASH_FUNCTION(msg).digest()
+
+
+def _get_number_of_blocks(msg_len: int) -> int:
+    num_of_blocks = (msg_len)//_HASH_LENGTH
+    if msg_len % _HASH_LENGTH != 0:
+        num_of_blocks += 1
+    
+    return num_of_blocks
+
+
+def concatenated_hashes(msg_len: int, key: bytes) -> bytes:
+    num_of_blocks = _get_number_of_blocks(msg_len)
+    int_len = num_of_blocks.bit_length()
+    return b''.join(
+        compute_hash(key + idx.to_bytes(int_len, 'little'))
+        for idx in range(num_of_blocks))
+
+
+def _xor_bytes(ba1: bytes, ba2: bytes) -> bytes:
+    assert len(ba1) == len(ba2), f'XOR {len(ba1)=} != {len(ba2)=}'
+    return bytes([_a ^ _b for _a, _b in zip(ba1, ba2)])
+
+#######################
+# Encryption/decryption
+#######################
+
+# If message contains x00 at the end,
+# then the decryption will fail.
+def encrypt(message_bytes: bytes, key_bytes: bytes) -> bytes:
+    assert len(message_bytes) <= len(key_bytes),\
+        f'encrypt: {len(message_bytes)=} > {len(key_bytes)=}'
+    message_aligned = message_bytes.ljust(len(key_bytes), b"\x00")
+    
+    return _xor_bytes(message_aligned, key_bytes)
+
+
+def decrypt(ciphertext_bytes: bytes, key_bytes: bytes) -> bytes:
+    assert len(ciphertext_bytes) <= len(key_bytes),\
+        f'{len(ciphertext_bytes)=} > {len(key_bytes)=}'
+    
+    return _xor_bytes(ciphertext_bytes, key_bytes).rstrip(b"\x00")
+
+
+#######################
+# Other utils
+#######################
