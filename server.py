@@ -51,11 +51,6 @@ if __name__ == '__main__':
         db_model.db.create_all()
     app.cli.add_command(db_model.reset_db_command)
     
-    # Add routes of all the implemented protocols and register the blueprint.
-    # Adding a route is simply registering a function to be called for a
-    # specific HTTP request method and URL
-    routes = routes_bp.create_routes()
-    routes_bp.add_protocol_routes(routes_bp.bp, routes)
     app.register_blueprint(routes_bp.bp, url_prefix='/protocols')
 
     app.run(host=HOST, port=PORT, debug=DEBUG)

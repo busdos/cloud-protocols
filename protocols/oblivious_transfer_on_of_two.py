@@ -5,48 +5,40 @@ from secrets import SystemRandom
 from mcl import *
 from enum import Enum
 
-import protocol_utils as ut
+from . import protocol_utils as ut
 
 class MessageChoice(Enum):
     FIRST = 0
     SECOND = 1
 
 class OneOfTwoCloud():
-    """
-    Cloud which holds messagesas only as long as it exists.
-    """
-    def __init__(self, generator: G1, messages: list[bytes]):
-        assert len(messages) == 2, "Number of messages must be 2."
-        self.messages = messages
-        self.generator = generator
-        self.secret_ephemeral = Fr()
-        self.public_ephemeral = G1()
+    @staticmethod
+    def gen_ephemerals(generator: G1):
+        secret_ephemeral = Fr.rnd()
+        public_ephemeral = generator * secret_ephemeral
 
-    def gen_ephemerals(self):
-        self.secret_ephemeral = Fr.rnd()
-        self.public_ephemeral = self.generator * self.secret_ephemeral
+        return (secret_ephemeral, public_ephemeral)
 
-    def get_public_ephemeral(self):
-        return self.public_ephemeral
+    @staticmethod
+    def encrypt_messages(client_pub_eph: G1,
+                         secret_eph: Fr,
+                         public_eph: G1,
+                         messages: list[bytes]):
+        assert len(messages) == 2,\
+            "Number of messages must be 2."
+        key1 = ut.compute_hash(client_pub_eph * secret_eph)
+        key2 = ut.compute_hash((client_pub_eph - public_eph) * secret_eph)
 
-    def store_new_messages(self, messages: list[bytes]):
-        assert len(messages) == 2, "Number of messages must be 2."
-        self.messages = messages
-
-    def encrypt_messages(self, client_pub_ephemeral: G1):
-        key1 = ut.compute_hash(client_pub_ephemeral * self.secret_ephemeral)
-        key2 = ut.compute_hash((client_pub_ephemeral - self.public_ephemeral) * self.secret_ephemeral)
-
-        longest_msg_len = len(max(self.messages, key=len))
+        longest_msg_len = len(max(messages, key=len))
 
         encryption_str1 = ut.concatenated_hashes(longest_msg_len,
                                                  key1)
         encryption_str2 = ut.concatenated_hashes(longest_msg_len,
-                                                key2)
+                                                 key2)
 
-        ciphertext1 = ut.encrypt(self.messages[0],
+        ciphertext1 = ut.encrypt(messages[0],
                                  encryption_str1)
-        ciphertext2 = ut.encrypt(self.messages[1],
+        ciphertext2 = ut.encrypt(messages[1],
                                  encryption_str2)
 
         return [ciphertext1, ciphertext2]
