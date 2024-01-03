@@ -1,7 +1,6 @@
 """
 Simple one-of-2 oblivious transfer protocol.
 """
-from secrets import SystemRandom
 from mcl import *
 from enum import Enum
 
@@ -17,6 +16,7 @@ class OneOfTwoCloud():
         secret_ephemeral = Fr.rnd()
         public_ephemeral = generator * secret_ephemeral
 
+        print(f"cloud public_ephemeral: {public_ephemeral}")
         return (secret_ephemeral, public_ephemeral)
 
     @staticmethod
@@ -26,8 +26,11 @@ class OneOfTwoCloud():
                          messages: list[bytes]):
         assert len(messages) == 2,\
             "Number of messages must be 2."
-        key1 = ut.compute_hash(client_pub_eph * secret_eph)
-        key2 = ut.compute_hash((client_pub_eph - public_eph) * secret_eph)
+
+        # Stringifying is important because implicit conversion of and object to bytes
+        # for hashing might not work the same on clinet and server side
+        key1 = (client_pub_eph * secret_eph).getStr()
+        key2 = ((client_pub_eph - public_eph) * secret_eph).getStr()
 
         longest_msg_len = len(max(messages, key=len))
 
@@ -58,18 +61,23 @@ class OneOfTwoClient():
         self.secret_ephemeral = Fr.rnd()
         self.public_ephemeral = self.generator * self.secret_ephemeral
         if self.choice == MessageChoice.SECOND:
-            self.public_ephemeral *= cloud_pub_ephemeral
+            self.public_ephemeral += cloud_pub_ephemeral
         
-        self.encryption_key = ut.compute_hash(self.public_ephemeral * self.secret_ephemeral)
-    
+        # Stringifying is important because implicit conversion of and object to bytes
+        # for hashing might not work the same on clinet and server side
+        self.encryption_key = (cloud_pub_ephemeral * self.secret_ephemeral).getStr()
+
     def get_public_ephemeral(self):
         return self.public_ephemeral
 
     def decrypt(self, ciphertexts: list[bytes]):
         assert len(ciphertexts) == 2,\
             "Number of ciphertexts must be 2."
-
-        encryption_str = ut.concatenated_hashes(len(ciphertexts[self.choice]),
-                                                self.encryption_key)
         
-        return ut.decrypt(ciphertexts[self.choice], encryption_str)
+        chosen_ciphertext = ciphertexts[self.choice.value]
+        encryption_str = ut.concatenated_hashes(
+               len(chosen_ciphertext),
+               self.encryption_key)
+        
+        return ut.decrypt(ciphertexts[self.choice.value],
+                          encryption_str)

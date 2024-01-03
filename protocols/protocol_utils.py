@@ -8,6 +8,8 @@ _HASH_LENGTH = _HASH_FUNCTION().digest_size
 
 
 def compute_hash(msg: bytes) -> bytes:
+    print(f"compute_hash: {msg=}")
+    print(f"computed hash: {_HASH_FUNCTION(msg).digest()}")
     return _HASH_FUNCTION(msg).digest()
 
 
@@ -29,26 +31,33 @@ def concatenated_hashes(msg_len: int, key: bytes) -> bytes:
 
 def _xor_bytes(ba1: bytes, ba2: bytes) -> bytes:
     assert len(ba1) == len(ba2), f'XOR {len(ba1)=} != {len(ba2)=}'
+    xored = bytes([_a ^ _b for _a, _b in zip(ba1, ba2)])
+    print(f"_xor_bytes: {xored=}")
+    print(f"right side: {ba2=}")
+
     return bytes([_a ^ _b for _a, _b in zip(ba1, ba2)])
 
 #######################
 # Encryption/decryption
 #######################
 
-# If message contains x00 at the end,
+# [TODO] If message contains x00 at the end,
 # then the decryption will fail.
 def encrypt(message_bytes: bytes, key_bytes: bytes) -> bytes:
     assert len(message_bytes) <= len(key_bytes),\
         f'encrypt: {len(message_bytes)=} > {len(key_bytes)=}'
+    # Adjust to the length of the key since it has the length of the longest
+    # message
     message_aligned = message_bytes.ljust(len(key_bytes), b"\x00")
-    
+
     return _xor_bytes(message_aligned, key_bytes)
 
 
 def decrypt(ciphertext_bytes: bytes, key_bytes: bytes) -> bytes:
     assert len(ciphertext_bytes) <= len(key_bytes),\
         f'{len(ciphertext_bytes)=} > {len(key_bytes)=}'
-    
+
+    print(f"decrypt: {ciphertext_bytes=}")
     return _xor_bytes(ciphertext_bytes, key_bytes).rstrip(b"\x00")
 
 
