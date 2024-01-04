@@ -6,7 +6,7 @@ from routes_blueprint import route_utils
 from protocols import oblivious_transfer_one_of_two as oo2
 
 def one_of_two_client(connection_url):
-    message_to_get = oo2.MessageChoice.FIRST
+    message_to_get = 0
     client = oo2.OneOfTwoClient(globals.GENERATOR, message_to_get)
 
     PROTOCOL_NAME = "one_of_two"

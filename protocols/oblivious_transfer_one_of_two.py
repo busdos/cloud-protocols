@@ -2,65 +2,118 @@
 Simple one-of-2 oblivious transfer protocol.
 """
 from mcl import *
-from enum import Enum
+from secrets import SystemRandom
 
 from . import protocol_utils as ut
-
-class MessageChoice(Enum):
-    FIRST = 0
-    SECOND = 1
 
 class OneOfTwoCloud():
     @staticmethod
     def gen_ephemerals(generator: G1):
+        # Only needed for 2 messages
         secret_ephemeral = Fr.rnd()
         public_ephemeral = generator * secret_ephemeral
 
         print(f"cloud public_ephemeral: {public_ephemeral}")
         return (secret_ephemeral, public_ephemeral)
 
+    def _compute_keys(number_of_messages:int,
+                      longest_msg_len: int,
+                     client_pub_eph: G1,
+                     secret_eph: Fr,
+                     public_eph: G1)-> list[(bytes, bytes)]:
+        assert number_of_messages >= 2,\
+            "Number of messages must be at least 2."
+        print(f"Number of messages: {number_of_messages}")
+
+        if number_of_messages == 2:
+            # Stringifying is important because implicit
+            # conversion of an object to bytes for hashing might
+            # not work the same on clinet and server side
+            keys = [(
+                (client_pub_eph * secret_eph).getStr(),
+                ((client_pub_eph - public_eph) * secret_eph).getStr()
+            )]
+        else:
+            rand = SystemRandom()
+            keys = [(rand.randbytes(longest_msg_len),
+                     rand.randbytes(longest_msg_len))
+                     for _ in range(number_of_messages.bit_length())]
+
+        return keys
+
+    def _select_key_indices(no_of_messages: int,
+                           message_idx: int)-> list[int]:
+        selected_keys = list(map(
+            lambda i: (message_idx >> i) & 1,
+            range((no_of_messages - 1).bit_length())
+        ))
+
+        return selected_keys
+
+    def _encrypt_message(encryption_key_length: int,
+                         key_indices: list[int],
+                         keys: list[(bytes, bytes)],
+                         message: bytes):
+        ciphertext = message
+        for i in range(len(keys)):
+            # Selecte key_indices[i]th element of the pair keys[i]
+            encryption_str = ut.concatenated_hashes(
+                encryption_key_length, keys[i][key_indices[i]])
+            ciphertext = ut.encrypt(ciphertext, encryption_str)
+
+        return ciphertext
+
     @staticmethod
-    def encrypt_messages(client_pub_eph: G1,
-                         secret_eph: Fr,
-                         public_eph: G1,
-                         messages: list[bytes]):
-        assert len(messages) == 2,\
-            "Number of messages must be 2."
+    def encrypt_messages(client_eph: G1,
+                         secret_ephemeral: Fr,
+                         public_ephemeral: G1,
+                         messages: list[bytes]) -> list[bytes]:
 
-        # Stringifying is important because implicit conversion of and object to bytes
-        # for hashing might not work the same on clinet and server side
-        key1 = (client_pub_eph * secret_eph).getStr()
-        key2 = ((client_pub_eph - public_eph) * secret_eph).getStr()
-
+        number_of_messages = len(messages)
         longest_msg_len = len(max(messages, key=len))
 
-        encryption_str1 = ut.concatenated_hashes(longest_msg_len,
-                                                 key1)
-        encryption_str2 = ut.concatenated_hashes(longest_msg_len,
-                                                 key2)
+        keys = OneOfTwoCloud._compute_keys(number_of_messages,
+                                           longest_msg_len,
+                                           client_eph,
+                                           secret_ephemeral,
+                                           public_ephemeral)
 
-        ciphertext1 = ut.encrypt(messages[0],
-                                 encryption_str1)
-        ciphertext2 = ut.encrypt(messages[1],
-                                 encryption_str2)
+        ciphertexts = []
+        for i in range(number_of_messages):
+            # [TODO] Could be a pre-defined matrix for small
+            # number of messages
+            m_i_key_indices = OneOfTwoCloud._select_key_indices(
+                number_of_messages, i)
 
-        return [ciphertext1, ciphertext2]
+            ciphertexts.append(
+                OneOfTwoCloud._encrypt_message(longest_msg_len,
+                                               m_i_key_indices,
+                                               keys,
+                                               messages[i])
+            )
+
+        return ciphertexts
 
 
 class OneOfTwoClient():
-    def __init__(self, generator: G1, choice: MessageChoice):
-        self.choice = choice
+    def __init__(self, generator: G1, choice_idx: int):
+        assert choice_idx in [0, 1],\
+            "Choice index must be 0 or 1."
+        self.choice_idx = choice_idx
         self.generator = generator
         self.secret_ephemeral = Fr()
         self.public_ephemeral = G1()
 
-    def set_choice(self, choice: MessageChoice):
-        self.choice = choice
+    def set_choice(self, choice_idx: int):
+        assert choice_idx in [0, 1],\
+            "Choice index must be 0 or 1."
+        self.choice_idx = choice_idx
 
     def gen_ephemerals(self, cloud_pub_ephemeral: G1):
         self.secret_ephemeral = Fr.rnd()
         self.public_ephemeral = self.generator * self.secret_ephemeral
-        if self.choice == MessageChoice.SECOND:
+        # If second message is chosen...
+        if self.choice_idx == 1:
             self.public_ephemeral += cloud_pub_ephemeral
         
         # Stringifying is important because implicit conversion of and object to bytes
@@ -74,10 +127,10 @@ class OneOfTwoClient():
         assert len(ciphertexts) == 2,\
             "Number of ciphertexts must be 2."
         
-        chosen_ciphertext = ciphertexts[self.choice.value]
+        chosen_ciphertext = ciphertexts[self.choice_idx]
         encryption_str = ut.concatenated_hashes(
                len(chosen_ciphertext),
                self.encryption_key)
         
-        return ut.decrypt(ciphertexts[self.choice.value],
+        return ut.decrypt(ciphertexts[self.choice_idx],
                           encryption_str)

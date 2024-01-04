@@ -31,7 +31,7 @@ def one_of_two_actions(ses_token, action, client_payload):
         seph = mcl_from_str(ses_data.left_val, mcl.Fr)
         peph = mcl_from_str(ses_data.right_val, mcl.G1)
         client_eph = mcl_from_str(client_payload.get("B"), mcl.G1)
-        
+
         ciphertexts = oo2.OneOfTwoCloud.encrypt_messages(
             client_eph, seph, peph, _MESSAGES[:2])
 
