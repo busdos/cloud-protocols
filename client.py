@@ -1,35 +1,26 @@
 import argparse
 
-import protocols.oblivious_polynomial_evaluation as ope
-import protocols.garbled_circuit as gc
-import protocols.private_set_intersection as psi
-import protocols.oblivious_transfer_one_of_n as otn
 import client_actions.client_one_of_two as oo2
+import globals as gl
 
-# [TODO] these should be bindings to client-side protocol functions
-# (what client exectues as part of running the protocol with the server) and
-# not protocols themselves
-LIST_OF_PROTOCOLS = {
-    "oo2": oo2.one_of_two_client,
-    # "otn": otn.one_of_n,
+LIST_OF_CLIENTS = {
+    gl.Protocols.ONE_OF_TWO.value: oo2.one_of_two_client,
     # "ope": ope.oblivious_polynomial_evaluation,
     # "gc": gc.garbled_circuit,
     # "psi": psi.private_set_intersection,
 }
-
-PROTOCOL_CHOICE = list(LIST_OF_PROTOCOLS.keys())
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "-p",
         dest="protocol",
-        choices=PROTOCOL_CHOICE,
+        choices=gl.Protocols.get_as_list(),
         required=True)
     parser.add_argument("-u", dest="url", required=True)
     args = parser.parse_args()
 
-    LIST_OF_PROTOCOLS[args.protocol](args.url)
+    LIST_OF_CLIENTS[args.protocol](args.url)
 
 if __name__ == "__main__":
     print("Starting client...")

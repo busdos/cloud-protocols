@@ -6,7 +6,7 @@ from secrets import SystemRandom
 
 from . import protocol_utils as ut
 
-class OneOfTwoCloud():
+class OTCloud():
     @staticmethod
     def gen_ephemerals(generator: G1):
         # Only needed for 2 messages
@@ -16,11 +16,12 @@ class OneOfTwoCloud():
         print(f"cloud public_ephemeral: {public_ephemeral}")
         return (secret_ephemeral, public_ephemeral)
 
-    def _compute_keys(number_of_messages:int,
-                      longest_msg_len: int,
-                     client_pub_eph: G1,
-                     secret_eph: Fr,
-                     public_eph: G1)-> list[(bytes, bytes)]:
+    @staticmethod
+    def compute_keys(number_of_messages:int,
+                     longest_msg_len: int,
+                     client_pub_eph: G1 = None,
+                     secret_eph: Fr = None,
+                     public_eph: G1 = None)-> list[(bytes, bytes)]:
         assert number_of_messages >= 2,\
             "Number of messages must be at least 2."
         print(f"Number of messages: {number_of_messages}")
@@ -64,29 +65,21 @@ class OneOfTwoCloud():
         return ciphertext
 
     @staticmethod
-    def encrypt_messages(client_eph: G1,
-                         secret_ephemeral: Fr,
-                         public_ephemeral: G1,
+    def encrypt_messages(longest_msg_len: int,
+                         keys: list[(bytes, bytes)],
                          messages: list[bytes]) -> list[bytes]:
 
         number_of_messages = len(messages)
-        longest_msg_len = len(max(messages, key=len))
-
-        keys = OneOfTwoCloud._compute_keys(number_of_messages,
-                                           longest_msg_len,
-                                           client_eph,
-                                           secret_ephemeral,
-                                           public_ephemeral)
 
         ciphertexts = []
         for i in range(number_of_messages):
             # [TODO] Could be a pre-defined matrix for small
             # number of messages
-            m_i_key_indices = OneOfTwoCloud._select_key_indices(
+            m_i_key_indices = OTCloud._select_key_indices(
                 number_of_messages, i)
 
             ciphertexts.append(
-                OneOfTwoCloud._encrypt_message(longest_msg_len,
+                OTCloud._encrypt_message(longest_msg_len,
                                                m_i_key_indices,
                                                keys,
                                                messages[i])
@@ -95,7 +88,7 @@ class OneOfTwoCloud():
         return ciphertexts
 
 
-class OneOfTwoClient():
+class OTClient():
     def __init__(self, generator: G1, choice_idx: int):
         assert choice_idx in [0, 1],\
             "Choice index must be 0 or 1."

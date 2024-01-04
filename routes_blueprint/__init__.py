@@ -5,37 +5,17 @@ from pprint import pformat
 
 from db_model import db, ObliviousTransferDataPair
 from .route_utils import generate_token
-from .route_oblivious_transfer import one_of_two_actions
-
-# Actions are an ordered list of the requests (urls) sent by the
-# client to the server
-#
-# The first element of the array is the initializing action,
-# so when it occurs the server should generate a new session
-# token
-#
-# The last element of the array is the closing action, so when
-# it occurs the server should delete the session's data from
-# the database
-PROTOCOLS = {
-    "one_of_two": {
-        "actions": [
-            "get_A",
-            "get_ciphertexts",
-        ],
-        "init_action": "get_A",
-        "close_action": "get_ciphertexts"
-    }
-}
+from .route_oblivious_transfer import one_of_two_actions, one_of_n_actions
+from globals import Protocols, PROTOCOL_SPECS
 
 bp = Blueprint("protocols", __name__)
 
 @bp.route("/")
 def index():
     current_app.logger.info(
-        f'Implemented protocols: {str(PROTOCOLS.keys())}')
+        f'Implemented protocols: {str(Protocols.get_as_list())}')
     return jsonify({
-        "protocols": list(PROTOCOLS.keys())
+        "protocols": list(Protocols.get_as_list())
     })
 
 # [TODO] can be generic, just call what is passed in the
@@ -44,10 +24,14 @@ def construct_db_data(ses_token,
                       protocol,
                       action,
                       client_payload):
-    if protocol == "one_of_two":
+    if protocol == Protocols.ONE_OF_TWO.value:
         return one_of_two_actions(ses_token,
                                   action,
                                   client_payload)
+    elif protocol == Protocols.ONE_OF_N.value:
+        return one_of_n_actions(ses_token,
+                                action,
+                                client_payload)
     else:
         current_app.logger.error(f"Unknown protocol {protocol=}")
         return None
@@ -63,15 +47,15 @@ def generic_protocol_route_post(protocol, action):
     payload = data.get("payload")
     current_app.logger.info(f"{protocol} Received payload: {pformat(payload)}")
 
-    if protocol not in PROTOCOLS:
+    if not Protocols.has_value(protocol):
         current_app.logger.error(f"Unknown protocol {protocol=}")
         return None
-    
-    if action not in PROTOCOLS[protocol]["actions"]:
+
+    if action not in PROTOCOL_SPECS[protocol]["actions"]:
         current_app.logger.error(f"Unknown action {action=}")
         return None
     
-    if action == PROTOCOLS[protocol]["init_action"]:
+    if action == PROTOCOL_SPECS[protocol]["init_action"]:
         session_token = generate_token()
     else:
         session_token = data.get("session_token")
@@ -81,7 +65,7 @@ def generic_protocol_route_post(protocol, action):
     db_data, response_payload = construct_db_data(
         session_token, protocol, action, payload)
     
-    if action == PROTOCOLS[protocol]["close_action"]:
+    if action == PROTOCOL_SPECS[protocol]["close_action"]:
         ObliviousTransferDataPair.query.filter_by(
             session_token=session_token).delete()
         db.session.commit()
