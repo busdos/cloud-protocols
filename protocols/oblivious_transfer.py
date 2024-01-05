@@ -78,17 +78,21 @@ class OTCloud():
             m_i_key_indices = OTCloud._select_key_indices(
                 number_of_messages, i)
 
+            if i == 1:
+                print(f"m_i_key_indices: {m_i_key_indices}")
+
+
             ciphertexts.append(
                 OTCloud._encrypt_message(longest_msg_len,
-                                               m_i_key_indices,
-                                               keys,
-                                               messages[i])
+                                         m_i_key_indices,
+                                         keys,
+                                         messages[i])
             )
 
         return ciphertexts
 
 
-class OTClient():
+class OneOfTwoClient():
     def __init__(self, generator: G1, choice_idx: int):
         assert choice_idx in [0, 1],\
             "Choice index must be 0 or 1."
@@ -124,6 +128,21 @@ class OTClient():
         encryption_str = ut.concatenated_hashes(
                len(chosen_ciphertext),
                self.encryption_key)
-        
+
         return ut.decrypt(ciphertexts[self.choice_idx],
                           encryption_str)
+
+    # [TODO] Change the structure of this clas to merge decrypt and batch_decrypt
+    # into one method
+    @staticmethod
+    def batch_decrypt(ciphertext: bytes, keys: list[bytes]):
+        plaintext = ciphertext
+        for key in keys:
+            decryption_str = ut.concatenated_hashes(
+                len(ciphertext),
+                key)
+
+            plaintext = ut._xor_bytes(plaintext, decryption_str)
+
+        plaintext = plaintext.rstrip(b"\x00")
+        return plaintext

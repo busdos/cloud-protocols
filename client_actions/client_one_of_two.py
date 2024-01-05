@@ -6,9 +6,10 @@ from routes_blueprint import route_utils
 from protocols import oblivious_transfer as ot
 
 def one_of_two_client(connection_url):
-    message_to_get = 1
-    client = ot.OTClient(gl.GENERATOR,
-                         message_to_get)
+    message_to_get = 0
+    client = ot.OneOfTwoClient(
+        gl.GENERATOR,
+        message_to_get)
 
     PROTOCOL_NAME = gl.Protocols.ONE_OF_TWO.value
     PROTOCOL_ACTIONS = gl.PROTOCOL_SPECS[PROTOCOL_NAME]['actions']

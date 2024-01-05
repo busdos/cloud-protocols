@@ -4,9 +4,6 @@ from uuid import uuid4
 # Routing utilities
 ###################
 
-def generate_sample_messages(num: int):
-    return [f"This is message number {i}".encode('ascii') for i in range(num)]
-
 def generate_token():
     return str(uuid4())
 

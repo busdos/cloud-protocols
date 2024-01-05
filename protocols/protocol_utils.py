@@ -8,8 +8,6 @@ _HASH_LENGTH = _HASH_FUNCTION().digest_size
 
 
 def compute_hash(msg: bytes) -> bytes:
-    print(f"compute_hash: {msg=}")
-    print(f"computed hash: {_HASH_FUNCTION(msg).digest()}")
     return _HASH_FUNCTION(msg).digest()
 
 
@@ -32,8 +30,8 @@ def concatenated_hashes(msg_len: int, key: bytes) -> bytes:
 def _xor_bytes(ba1: bytes, ba2: bytes) -> bytes:
     assert len(ba1) == len(ba2), f'XOR {len(ba1)=} != {len(ba2)=}'
     xored = bytes([_a ^ _b for _a, _b in zip(ba1, ba2)])
-    print(f"_xor_bytes: {xored=}")
-    print(f"right side: {ba2=}")
+    # print(f"_xor_bytes: {xored=}")
+    # print(f"right side: {ba2=}")
 
     return bytes([_a ^ _b for _a, _b in zip(ba1, ba2)])
 
@@ -60,6 +58,19 @@ def decrypt(ciphertext_bytes: bytes, key_bytes: bytes) -> bytes:
     print(f"decrypt: {ciphertext_bytes=}")
     return _xor_bytes(ciphertext_bytes, key_bytes).rstrip(b"\x00")
 
+
+# [TODO]? make generic xor encryption and decryption functions
+# One ciphertext with many keys
+# def batch_decrypt(ciphertext_bytes: bytes, keys: list[bytes]) -> list[bytes]:
+#     plaintext = ciphertext_bytes
+#     for key in keys:
+#         assert len(ciphertext_bytes) <= len(key),\
+#             f'{len(ciphertext_bytes)=} > {len(key)=}'
+
+#         plaintext = _xor_bytes(plaintext, key)
+
+#     plaintext = plaintext.rstrip(b"\x00")
+#     return plaintext
 
 #######################
 # Other utils

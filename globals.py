@@ -35,16 +35,16 @@ PROTOCOL_SPECS = {
     Protocols.ONE_OF_TWO.value: {
         'actions': [
             'get_A',
-            'get_oo2_ciphertexts',
+            'get_two_ciphertexts',
         ],
         'init_action': 'get_A',
-        'close_action': 'get_oo2_ciphertexts'
+        'close_action': 'get_two_ciphertexts'
     },
     Protocols.ONE_OF_N.value: {
         'actions': [
             'get_ciphertexts',
             'get_A',
-            'get_oo2_ciphertexts',
+            'get_two_ciphertexts',
             'done',
         ],
         'init_action': 'get_ciphertexts',

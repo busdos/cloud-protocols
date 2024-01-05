@@ -7,7 +7,7 @@ from flask_sqlalchemy import SQLAlchemy
 import logging
 import os
 
-import db_model
+# import db_model
 import routes_blueprint as routes_bp
 
 HOST = "0.0.0.0"
@@ -44,12 +44,13 @@ if __name__ == '__main__':
     # Load the instance config
     app.config.from_pyfile("config.py", silent=True)
 
+    # [TODO] temporary json structure is used for now
     # Initialize the database and add the ability to reset it from
     # the command line
-    db_model.db.init_app(app)
-    with app.app_context():
-        db_model.db.create_all()
-    app.cli.add_command(db_model.reset_db_command)
+    # db_model.db.init_app(app)
+    # with app.app_context():
+    #     db_model.db.create_all()
+    # app.cli.add_command(db_model.reset_db_command)
     
     app.register_blueprint(routes_bp.bp, url_prefix='/protocols')
 

@@ -6,13 +6,12 @@ from flask import jsonify
 
 import mcl
 
-from .route_utils import mcl_to_str, mcl_from_str, generate_sample_messages
+from db_model import temp_db
+from .route_utils import mcl_to_str, mcl_from_str
 
-from db_model import ObliviousTransferDataPair
 from protocols import oblivious_transfer as ot
 import globals
 
-_MESSAGES = generate_sample_messages(10)
 TWO = 2
 
 # [TODO] hardcoded strings can be references to global
@@ -20,7 +19,8 @@ TWO = 2
 # (e.g. the PROTOCOLS variable)
 def one_of_two_actions(ses_token,
                        action,
-                       client_payload):
+                       client_payload,
+                       messages):
     if action == 'get_A':
         seph, peph = ot.OTCloud.gen_ephemerals(
             globals.GENERATOR)
@@ -30,16 +30,18 @@ def one_of_two_actions(ses_token,
         response_payload = {
             'A': mcl_to_str(peph)
         }
-    elif action == 'get_oo2_ciphertexts':
-        ses_data = ObliviousTransferDataPair.query.filter_by(
-            session_token=ses_token).first()
+    elif action == 'get_two_ciphertexts':
+        assert messages is not None
+        # Get keys stored in the previous step
+        ses_data = temp_db[ses_token]['get_A']['keys']
         
-        seph = mcl_from_str(ses_data.left_val, mcl.Fr)
-        peph = mcl_from_str(ses_data.right_val, mcl.G1)
+        print(f'{ses_data=}')
+        seph = mcl_from_str(ses_data[0][0], mcl.Fr)
+        peph = mcl_from_str(ses_data[0][1], mcl.G1)
         client_eph = mcl_from_str(client_payload.get('B'), mcl.G1)
 
         longest_msg_len = len(
-            max(_MESSAGES,
+            max(messages,
             key=len))
 
         keys = ot.OTCloud.compute_keys(
@@ -50,7 +52,7 @@ def one_of_two_actions(ses_token,
             peph)
 
         ciphertexts = ot.OTCloud.encrypt_messages(
-            longest_msg_len, keys, _MESSAGES[:2])
+            longest_msg_len, keys, messages)
 
         db_data = None
         response_payload = {
@@ -64,20 +66,24 @@ def one_of_n_actions(ses_token,
                      action,
                      client_payload):
     if action == 'get_ciphertexts':
-        longest_msg_len = len(longest_msg_len)
+        messages = temp_db[ses_token]['messages']
+        print(f'{messages=}')
+        longest_msg_len = len(
+            max(messages,
+            key=len))
 
         keys = ot.OTCloud.compute_keys(
-            len(_MESSAGES),
+            len(messages),
             longest_msg_len)
 
         ciphertexts = ot.OTCloud.encrypt_messages(
             longest_msg_len,
             keys,
-            _MESSAGES)
+            messages)
 
         # db_data are all the key pairs for the messages
         db_data = [
-            (mcl_to_str(k[0]), mcl_to_str(k[1]))
+            (k[0], k[1])
             for k in keys
         ]
 
@@ -85,9 +91,16 @@ def one_of_n_actions(ses_token,
             'ciphertexts': [cip.hex() for cip in ciphertexts]
         }
     else:
+        # Get key_idx from client_payload and load it from the DB
+        oo2_messages = None
+        if action == 'get_two_ciphertexts':
+            key_idx = client_payload.get('key_idx')
+            oo2_messages = temp_db[ses_token]['get_ciphertexts']['keys'][key_idx]
+
         db_data, response_payload = \
             one_of_two_actions(ses_token,
                                action,
-                               client_payload)
+                               client_payload,
+                               oo2_messages)
 
     return db_data, response_payload

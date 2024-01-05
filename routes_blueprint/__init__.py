@@ -3,10 +3,10 @@ from flask import current_app, request, current_app
 
 from pprint import pformat
 
-from db_model import db, ObliviousTransferDataPair
 from .route_utils import generate_token
 from .route_oblivious_transfer import one_of_two_actions, one_of_n_actions
 from globals import Protocols, PROTOCOL_SPECS
+from db_model import temp_db, MESSAGES, MESSAGES_ONE_OF_TWO
 
 bp = Blueprint("protocols", __name__)
 
@@ -25,9 +25,11 @@ def construct_db_data(ses_token,
                       action,
                       client_payload):
     if protocol == Protocols.ONE_OF_TWO.value:
+        messages = temp_db[ses_token]["messages"]
         return one_of_two_actions(ses_token,
                                   action,
-                                  client_payload)
+                                  client_payload,
+                                  messages)
     elif protocol == Protocols.ONE_OF_N.value:
         return one_of_n_actions(ses_token,
                                 action,
@@ -54,37 +56,45 @@ def generic_protocol_route_post(protocol, action):
     if action not in PROTOCOL_SPECS[protocol]["actions"]:
         current_app.logger.error(f"Unknown action {action=}")
         return None
-    
+
+    is_init = action == PROTOCOL_SPECS[protocol]["init_action"]
+    current_app.logger.info(f"{protocol} Current action: {pformat(action)};"
+                            f" is init action: {pformat(is_init)}")
     if action == PROTOCOL_SPECS[protocol]["init_action"]:
         session_token = generate_token()
+        temp_db[session_token] = {
+            "counter": 0,
+            "messages": MESSAGES_ONE_OF_TWO if
+                protocol == Protocols.ONE_OF_TWO.value else MESSAGES,
+        }
     else:
         session_token = data.get("session_token")
+
+    temp_db[session_token][action] = {
+        "keys": []
+    }
 
     # db_data is a list of pairs; pairs are defined differently
     # for each protocol
     db_data, response_payload = construct_db_data(
         session_token, protocol, action, payload)
-    
-    if action == PROTOCOL_SPECS[protocol]["close_action"]:
-        ObliviousTransferDataPair.query.filter_by(
-            session_token=session_token).delete()
-        db.session.commit()
-    else:
-        data_to_insert = [ObliviousTransferDataPair(
-            session_token=session_token,
-            val_idx=i,
-            left_val=key0,
-            right_val=key1,
-        ) for i, (key0, key1) in enumerate(db_data)]
 
-        try:
-            db.session.add_all(data_to_insert)
-            db.session.commit()
-        except:
-            db.create_all()
-            db.session.rollback()
-            db.session.add_all(data_to_insert)
-            db.session.commit()
+    is_close_action = action == PROTOCOL_SPECS[protocol]["close_action"]
+    if is_close_action:
+        del temp_db[session_token]
+    else:
+        # [TODO] add to protocol specification whether an action
+        # returns some data to be stored in the DB
+        if db_data is not None:
+            curr_counter = temp_db[session_token]["counter"]
+            for key0, key1 in db_data:
+                temp_db[session_token][action]["keys"].append((key0, key1))
+                curr_counter += 1
+            temp_db[session_token]["counter"] = curr_counter
+
+    if not is_close_action:
+        # print(f"{temp_db[session_token]=}")
+        print(f"{temp_db[session_token][action]=}")
 
     response = {
         "session_token": session_token,
