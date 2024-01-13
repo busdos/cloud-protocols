@@ -1,10 +1,12 @@
 """
 Simple one-of-2 oblivious transfer protocol.
 """
-from mcl import *
 from secrets import SystemRandom
 
+from mcl import G1, Fr
+
 from . import protocol_utils as ut
+
 
 class OTCloud():
     @staticmethod

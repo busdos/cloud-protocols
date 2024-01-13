@@ -1,11 +1,11 @@
 """
 Flask server and the SQLAlchemy database of the application.
 """
-from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
-
 import logging
 import os
+
+from flask import Flask
+from flask_sqlalchemy import SQLAlchemy
 
 # import db_model
 import routes_blueprint as routes_bp
@@ -51,7 +51,7 @@ if __name__ == '__main__':
     # with app.app_context():
     #     db_model.db.create_all()
     # app.cli.add_command(db_model.reset_db_command)
-    
+
     app.register_blueprint(routes_bp.bp, url_prefix='/protocols')
 
     app.run(host=HOST, port=PORT, debug=DEBUG)

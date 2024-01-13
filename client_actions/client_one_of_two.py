@@ -1,9 +1,11 @@
 import mcl
 
 import globals as gl
-from . import post_action
-from routes_blueprint import route_utils
 from protocols import oblivious_transfer as ot
+from routes_blueprint import route_utils
+
+from . import post_action
+
 
 def one_of_two_client(connection_url):
     message_to_get = 0

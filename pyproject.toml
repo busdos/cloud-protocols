@@ -1,0 +1,22 @@
+# To use e.g. yapf you either need a .style.yapf or setup.cfg
+# Black has to be specified in pyproject.toml
+# # [yapf]
+# # based_on_style = pep8
+# # split_before_logical_operator = true
+# # column_limit = 60
+# 
+# [isort]
+# profile = black
+# # line_length = 60
+# sections = FUTURE,STDLIB,THIRDPARTY,FIRSTPARTY,LOCALFOLDER
+# # known_third_party = []
+# 
+# [flake8]
+# max-line-length = 60
+
+[tool.black]
+line-length = 60
+
+[tool.isort]
+profile = "black"
+sections = ["FUTURE", "STDLIB", "THIRDPARTY", "FIRSTPARTY", "LOCALFOLDER"]

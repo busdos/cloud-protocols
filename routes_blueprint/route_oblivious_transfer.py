@@ -2,15 +2,14 @@
 Route (server-side actions) for the one-of-two and
 one-of-n oblivious transfer algorithms.
 """
+import mcl
 from flask import jsonify
 
-import mcl
-
-from db_model import temp_db
-from .route_utils import mcl_to_str, mcl_from_str
-
-from protocols import oblivious_transfer as ot
 import globals
+from db_model import temp_db
+from protocols import oblivious_transfer as ot
+
+from .route_utils import mcl_from_str, mcl_to_str
 
 TWO = 2
 

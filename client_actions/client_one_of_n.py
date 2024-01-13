@@ -1,12 +1,15 @@
 import mcl
 
 import globals as gl
-from . import post_action
-from routes_blueprint import route_utils
-from protocols import oblivious_transfer as ot
+
 # [TODO] batch decryption should probably be part of
 # the protocol itself and not directly imported
+from protocols import oblivious_transfer as ot
 from protocols import protocol_utils as ut
+from routes_blueprint import route_utils
+
+from . import post_action
+
 
 def one_of_n_client(connection_url):
     message_to_get = 6

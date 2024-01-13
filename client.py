@@ -1,7 +1,7 @@
 import argparse
 
-import client_actions.client_one_of_two as oo2
 import client_actions.client_one_of_n as oon
+import client_actions.client_one_of_two as oo2
 import globals as gl
 
 LIST_OF_CLIENTS = {
@@ -11,6 +11,7 @@ LIST_OF_CLIENTS = {
     # "gc": gc.garbled_circuit,
     # "psi": psi.private_set_intersection,
 }
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -23,6 +24,7 @@ def main():
     args = parser.parse_args()
 
     LIST_OF_CLIENTS[args.protocol](args.url)
+
 
 if __name__ == "__main__":
     print("Starting client...")

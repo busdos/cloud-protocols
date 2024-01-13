@@ -1,9 +1,8 @@
-from sqlalchemy.dialects.sqlite import JSON
-from sqlalchemy.schema import PrimaryKeyConstraint
-from flask_sqlalchemy import SQLAlchemy
-
-import click
-from flask.cli import with_appcontext
+# import click
+# from flask.cli import with_appcontext
+# from flask_sqlalchemy import SQLAlchemy
+# from sqlalchemy.dialects.sqlite import JSON
+# from sqlalchemy.schema import PrimaryKeyConstraint
 
 # db = SQLAlchemy()
 
@@ -33,8 +32,10 @@ from flask.cli import with_appcontext
 #     database.drop_all()
 #     database.create_all()
 
+
 def _generate_sample_messages(num: int):
     return [f"This is message number {i}".encode('ascii') for i in range(num)]
+
 
 MESSAGES = _generate_sample_messages(10)
 MESSAGES_ONE_OF_TWO = MESSAGES[:2]

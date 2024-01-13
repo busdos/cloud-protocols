@@ -1,5 +1,6 @@
 import requests
 
+
 def post_action(url, protocol, action, payload):
     complete_url = f"{url}/protocols/{protocol}/{action}"
     

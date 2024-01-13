@@ -29,7 +29,7 @@ def concatenated_hashes(msg_len: int, key: bytes) -> bytes:
 
 def _xor_bytes(ba1: bytes, ba2: bytes) -> bytes:
     assert len(ba1) == len(ba2), f'XOR {len(ba1)=} != {len(ba2)=}'
-    xored = bytes([_a ^ _b for _a, _b in zip(ba1, ba2)])
+    # xored = bytes([_a ^ _b for _a, _b in zip(ba1, ba2)])
     # print(f"_xor_bytes: {xored=}")
     # print(f"right side: {ba2=}")
 

@@ -1,12 +1,12 @@
-from flask import Blueprint, jsonify
-from flask import current_app, request, current_app
-
 from pprint import pformat
 
+from flask import Blueprint, current_app, jsonify, request
+
+from db_model import MESSAGES, MESSAGES_ONE_OF_TWO, temp_db
+from globals import PROTOCOL_SPECS, Protocols
+
+from .route_oblivious_transfer import one_of_n_actions, one_of_two_actions
 from .route_utils import generate_token
-from .route_oblivious_transfer import one_of_two_actions, one_of_n_actions
-from globals import Protocols, PROTOCOL_SPECS
-from db_model import temp_db, MESSAGES, MESSAGES_ONE_OF_TWO
 
 bp = Blueprint("protocols", __name__)
 
