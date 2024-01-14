@@ -122,6 +122,14 @@ class OneOfTwoClient():
     def get_public_ephemeral(self):
         return self.public_ephemeral
 
+    def get_secret_ephemeral(self):
+        """
+        Returns the secret ephemeral which was computed considering the
+        choice of the client and cloud's public ephemeral. For cases when
+        secret ephemerals need to be buffered.
+        """
+        return self.secret_ephemeral
+
     def decrypt(self, ciphertexts: list[bytes]):
         assert len(ciphertexts) == 2,\
             "Number of ciphertexts must be 2."

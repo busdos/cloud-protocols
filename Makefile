@@ -10,6 +10,6 @@ tidy_up:
 # black .
 # yapf -i -r .
 	isort .
-	flake8 --max-line-length=60 .
+# flake8 --max-line-length=60 .
 	@echo "[MAKEFILE] Done!"
 

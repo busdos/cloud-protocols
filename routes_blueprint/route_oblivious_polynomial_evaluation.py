@@ -60,6 +60,9 @@ def ope_actions(ses_token,
 
         # Generate gl.OPE_SMALL_N*bit_length(number_of_queried_points) public
         # ephemerals for the client to use in the OT protocol
+        print(f'{len(query_points).bit_length()=}')
+        print(f'{gl.OPE_SMALL_N=}')
+        
         ephemerals = []
         for i in range(gl.OPE_SMALL_N):
             for j in range(len(query_points).bit_length()):
@@ -67,11 +70,11 @@ def ope_actions(ses_token,
                 ephemerals.append((seph, peph))
 
         db_data = {
-            'query_points': [],
+            'masked_poly_points': [],
             'ot_ephemerals': [],
         }
         for i in range(len(query_points)):
-            db_data['query_points'].append(
+            db_data['masked_poly_points'].append(
                 (mcl_to_str(query_points[i][0]), mcl_to_str(masked_poly_values[i]))
             )
         for i in range(len(ephemerals)):
@@ -88,57 +91,52 @@ def ope_actions(ses_token,
     elif action == 'perform_n_of_big_n_ot':
         client_ephemerals = client_payload.get('ephemerals')
 
-        # comp_res = temp_db[ses_token]['get_masked_poly_points']['keys']
-        # y_values = [point[1] for point in comp_res]
-        # y_values_strs = [mcl_to_str(y) for y in y_values]
-        y_values_strs = [mcl_to_str(y) for y in masked_poly_values]
+        points = temp_db[ses_token]['get_server_ephemerals']['masked_poly_points']
+        y_values_strs = [point[1] for point in points]
+        print(f'{y_values_strs=}')
+        y_value_bytes = [bytes.fromhex(y) for y in y_values_strs]
 
         total_num_of_points = len(y_values_strs)
         max_bits_in_point_idx = total_num_of_points.bit_length()
-        number_of_requested_points = gl.OPE_QUERY_POLY_DEGREE * \
-            gl.OPE_MAIN_POLY_DEGREE + 1
+        number_of_requested_points = gl.OPE_SMALL_N
 
-        # Check that client_ephemerals is of the correct size
-        #
-        # client_ephemerals should be a dict of values looking like this:
+        # Check that client_ephemerals is of the correct size.
+        # Client ephemerals are a list of key-value pairs of the form:
         # {
-        #   0: [eph_0_0, eph_0_1, ..., eph_0_max_bits_in_point_idx],
-        #   1: [eph_1_0, eph_1_1, ..., eph_1_max_bits_in_point_idx],
-        #   ...
-        #   number_of_requested_points - 1: [eph_n_0, eph_n_1, ..., eph_n_max_bits_in_point_idx]
+        #   'ephemeral_<i>_<j>': <ephemeral_value>
         # }
-        #
-        assert len(client_ephemerals) == number_of_requested_points
-        for i in range(number_of_requested_points):
-            assert i in client_ephemerals
-            assert len(client_ephemerals[i]) == max_bits_in_point_idx
-            for bit_i in range(max_bits_in_point_idx):
-                assert client_ephemerals[i][bit_i] is not None
+        # where i is the index of the point and j is the index of the bit
+        # of the point index.
+        assert len(client_ephemerals) == \
+            number_of_requested_points * max_bits_in_point_idx
 
         response_payload = {}
         for i in range(number_of_requested_points):
             i_keys, ciphertexts = \
-                oblivious_transfer_encrypt_messages(y_values_strs)
+                oblivious_transfer_encrypt_messages(y_value_bytes)
             response_payload[f'ciphertexts_{i}'] = \
                 [cip.hex() for cip in ciphertexts]
 
             assert len(i_keys) == max_bits_in_point_idx
             for bit_i in range(max_bits_in_point_idx):
-                seph, peph = ot.OTCloud.gen_ephemerals(gl.GENERATOR)
-                client_eph = client_ephemerals[i][bit_i]
-                str_i_keys = [mcl_to_str(k) for k in i_keys[bit_i]]
+                seph, peph = temp_db[ses_token]['get_server_ephemerals']['ot_ephemerals'][i * max_bits_in_point_idx + bit_i]
+                client_eph = client_ephemerals[f'ephemeral_{i}_{bit_i}']
+
+                print(f'{client_eph=}')
+                print(f'{seph=}')
+                print(f'{peph=}')
+
                 _, k_ciphertexts = oblivious_transfer_encrypt_messages(
-                    str_i_keys,
-                    seph,
-                    peph,
-                    client_eph
+                    i_keys[bit_i],
+                    mcl_from_str(seph, mcl.Fr),
+                    mcl_from_str(peph, mcl.G1),
+                    mcl_from_str(client_eph, mcl.G1)
                 )
 
                 response_payload[f'ciphertexts_{i}_{bit_i}'] = \
                     [cip.hex() for cip in k_ciphertexts]
-        
-        db_data = None
 
+        db_data = None
     else:
         db_data = None
         response_payload = None

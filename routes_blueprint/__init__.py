@@ -74,14 +74,20 @@ def generic_protocol_route_post(protocol, action):
 
     if action == PROTOCOL_SPECS[protocol]["init_action"]:
         session_token = generate_token()
+        default_messages = MESSAGES_ONE_OF_TWO if \
+            protocol == Protocols.ONE_OF_TWO.value else \
+            MESSAGES if protocol == Protocols.ONE_OF_N.value else \
+            None
+
         temp_db[session_token] = {
             "counter": 0,
-            "messages": MESSAGES_ONE_OF_TWO if
-                protocol == Protocols.ONE_OF_TWO.value else MESSAGES,
+            "messages": default_messages
         }
+        # print(f"{session_token}: {temp_db[session_token]=}")
     else:
         session_token = data.get("session_token")
 
+    # print(f"{temp_db[session_token]=}")
     temp_db[session_token][action] = {}
 
     # db_data is a list of pairs; pairs are defined differently

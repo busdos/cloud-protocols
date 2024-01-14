@@ -14,9 +14,9 @@ from .route_utils import mcl_from_str, mcl_to_str
 # [TODO] probably has to be part of the Cloud class
 def oblivious_transfer_encrypt_messages(
     messages: list[str],
-    cloud_seph = None,
-    cloud_peph = None,
-    client_peph = None
+    cloud_seph: mcl.Fr = None,
+    cloud_peph: mcl.G1 = None,
+    client_peph: mcl.G1 = None
 ) -> (list[bytes], list[bytes]):
     if len(messages) == 2:
         assert cloud_seph is not None
