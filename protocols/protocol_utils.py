@@ -47,16 +47,31 @@ def encrypt(message_bytes: bytes, key_bytes: bytes) -> bytes:
     # Adjust to the length of the key since it has the length of the longest
     # message
     message_aligned = message_bytes.ljust(len(key_bytes), b"\x00")
+    # Print with blue color
+    # print(f"\033[94mencrypt: {message_bytes=}\033[0m")
 
-    return _xor_bytes(message_aligned, key_bytes)
+    encrypted = _xor_bytes(message_aligned, key_bytes)
+
+    # Decrypt the message here and check that it is the same as the original
+    # message
+    decrypted = decrypt(encrypted, key_bytes)
+    # print(f"\033[94mencrypt: {message_bytes=}\033[0m")
+    if decrypted != message_bytes:
+        print("Decryption failed!")
+        print(f"\033[91m{message_bytes=}\033[0m")
+        print(f"\033[91m{decrypted=}\033[0m")
+
+    return encrypted    
 
 
 def decrypt(ciphertext_bytes: bytes, key_bytes: bytes) -> bytes:
     assert len(ciphertext_bytes) <= len(key_bytes),\
         f'{len(ciphertext_bytes)=} > {len(key_bytes)=}'
 
-    print(f"decrypt: {ciphertext_bytes=}")
-    return _xor_bytes(ciphertext_bytes, key_bytes).rstrip(b"\x00")
+    # Print with pink color
+    decrypted = _xor_bytes(ciphertext_bytes, key_bytes).rstrip(b"\x00")    
+    # print(f"\033[95mdecrypt: {decrypted=}\033[0m")
+    return decrypted
 
 
 # [TODO]? make generic xor encryption and decryption functions

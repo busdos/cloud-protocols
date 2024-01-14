@@ -29,7 +29,6 @@ def ope_actions(ses_token,
             )
 
         ### Test prints
-        # Print with red color
 
         alpha = mcl.Fr()
         alpha.setInt(gl.OPE_TEST_ALPHA)
@@ -38,7 +37,8 @@ def ope_actions(ses_token,
         ### End of test prints
 
         query_points = client_payload.get('query_points')
-        print(f'{query_points=}')
+        # print(f'{query_points=}')
+
         # query_points is a dict of values looking like this:
         # {
         #   'point_0_x': x_0,
@@ -69,9 +69,9 @@ def ope_actions(ses_token,
 
         # Generate gl.OPE_SMALL_N*bit_length(number_of_queried_points) public
         # ephemerals for the client to use in the OT protocol
-        print(f'{len(query_points).bit_length()=}')
-        print(f'{gl.OPE_SMALL_N=}')
-        
+        # print(f'{len(query_points).bit_length()=}')
+        # print(f'{gl.OPE_SMALL_N=}')
+
         ephemerals = []
         for i in range(gl.OPE_SMALL_N):
             for j in range(len(query_points).bit_length()):
@@ -86,6 +86,15 @@ def ope_actions(ses_token,
             db_data['masked_poly_points'].append(
                 (mcl_to_str(query_points[i][0]), mcl_to_str(masked_poly_values[i]))
             )
+
+        # Read the points from the file
+        with open('query_points.txt', 'r') as f:
+            submerged_ids_file = [
+                int(line.strip()) for line in f.readlines()
+            ]
+
+        print(f'\033[92m{[masked_poly_values[i] for i in submerged_ids_file]=}\033[0m')
+
         for i in range(len(ephemerals)):
             db_data['ot_ephemerals'].append(
                 (mcl_to_str(ephemerals[i][0]), mcl_to_str(ephemerals[i][1]))
@@ -102,7 +111,7 @@ def ope_actions(ses_token,
 
         points = temp_db[ses_token]['get_server_ephemerals']['masked_poly_points']
         y_values_strs = [point[1] for point in points]
-        print(f'{y_values_strs=}')
+        # print(f'{y_values_strs=}')
         y_value_bytes = [bytes.fromhex(y) for y in y_values_strs]
 
         total_num_of_points = len(y_values_strs)
@@ -131,9 +140,9 @@ def ope_actions(ses_token,
                 seph, peph = temp_db[ses_token]['get_server_ephemerals']['ot_ephemerals'][i * max_bits_in_point_idx + bit_i]
                 client_eph = client_ephemerals[f'ephemeral_{i}_{bit_i}']
 
-                print(f'{client_eph=}')
-                print(f'{seph=}')
-                print(f'{peph=}')
+                # print(f'{client_eph=}')
+                # print(f'{seph=}')
+                # print(f'{peph=}')
 
                 _, k_ciphertexts = oblivious_transfer_encrypt_messages(
                     i_keys[bit_i],

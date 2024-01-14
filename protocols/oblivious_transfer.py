@@ -15,7 +15,7 @@ class OTCloud():
         secret_ephemeral = Fr.rnd()
         public_ephemeral = generator * secret_ephemeral
 
-        print(f"cloud public_ephemeral: {public_ephemeral}")
+        # print(f"cloud public_ephemeral: {public_ephemeral}")
         return (secret_ephemeral, public_ephemeral)
 
     @staticmethod
@@ -26,7 +26,7 @@ class OTCloud():
                      public_eph: G1 = None)-> list[(bytes, bytes)]:
         assert number_of_messages >= 2,\
             "Number of messages must be at least 2."
-        print(f"Number of messages: {number_of_messages}")
+        # print(f"Number of messages: {number_of_messages}")
 
         if number_of_messages == 2:
             # Stringifying is important because implicit
@@ -80,9 +80,7 @@ class OTCloud():
             m_i_key_indices = OTCloud._select_key_indices(
                 number_of_messages, i)
 
-            if i == 1:
-                print(f"m_i_key_indices: {m_i_key_indices}")
-
+            # print(f"m_i_key_indices: {m_i_key_indices}")
 
             ciphertexts.append(
                 OTCloud._encrypt_message(longest_msg_len,
@@ -127,8 +125,6 @@ class OneOfTwoClient():
                len(chosen_ciphertext),
                encryption_key)
         
-        print(f"operand types: {type(ciphertexts[choice_idx])=}, {type(encryption_str)=}")
-
         return ut.decrypt(ciphertexts[choice_idx],
                           encryption_str)
 

@@ -58,7 +58,8 @@ def generic_protocol_route_post(protocol, action):
         data = request.json
 
     payload = data.get("payload")
-    current_app.logger.info(f"{protocol} Received payload: {pformat(payload)}")
+    # current_app.logger.info(f"{protocol} Received payload: {pformat(payload)}")
+    current_app.logger.info(f"{protocol} Received payload.")
 
     if not Protocols.has_value(protocol):
         current_app.logger.error(f"Unknown protocol {protocol=}")
@@ -113,15 +114,15 @@ def generic_protocol_route_post(protocol, action):
 
             temp_db[session_token]["counter"] = curr_counter
 
-    if not is_close_action:
+    # if not is_close_action:
         # print(f"{temp_db[session_token]=}")
-        print(f"{temp_db[session_token][action]=}")
+        # print(f"{temp_db[session_token][action]=}")
 
     response = {
         "session_token": session_token,
         "payload": response_payload
     }
 
-    current_app.logger.info(
-        f"{protocol} Sending response: {pformat(response)}")
+    # current_app.logger.info(f"{protocol} Sending response: {pformat(response)}")
+    current_app.logger.info(f"{protocol} Sending response.")
     return jsonify(response)

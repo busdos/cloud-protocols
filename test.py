@@ -4,7 +4,7 @@ import globals as gl
 
 def test_ope():
     alpha = Fr()
-    alpha.setInt(10)
+    alpha.setInt(1123124)
 
     query_polynomial = ope.OPEPolynomial(
         gl.OPE_QUERY_POLY_DEGREE,
@@ -13,7 +13,7 @@ def test_ope():
     query_polynomial.set_val_at_zero(alpha)
 
     client = ope.OPEClient()
-    _ = client.gen_submerged_points_indices(
+    submerged_indices = client.gen_submerged_points_indices(
         gl.OPE_SMALL_N,
         gl.OPE_BIG_N
     )
@@ -49,11 +49,16 @@ def test_ope():
         query_points
     )
 
+    interpolation_y_values = [
+        cloud_values[i]
+        for i in submerged_indices
+    ]
+
     print(f'{len(cloud_values)=}')
 
     # User ops
     result = client.eval_result_polynomial(
-        cloud_values
+        interpolation_y_values
     )
 
     print(f'{expected_result=}')

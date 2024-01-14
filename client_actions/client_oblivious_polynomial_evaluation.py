@@ -34,6 +34,15 @@ def ope_client(url):
         gl.OPE_SMALL_N,
         gl.OPE_BIG_N
     )
+    # Write the points into a file to be able to read them
+    # on server for verification
+    with open('query_points.txt', 'w') as f:
+        for i in range(len(submerged_ids)):
+            f.write(f'{submerged_ids[i]}\n')
+
+    from time import sleep
+    sleep(1)
+
     query_x_values = ope_client.gen_query_x_values(
         gl.OPE_BIG_N
     )
@@ -50,8 +59,6 @@ def ope_client(url):
         payload_to_post['payload']['query_points'][f'point_{i}_x'] = route_ut.mcl_to_str(p[0])
         payload_to_post['payload']['query_points'][f'point_{i}_y'] = route_ut.mcl_to_str(p[1])
 
-    # print(f'{payload_to_post["payload"]["query_points"]=}')
-
     resp_data = post_action(
         url,
         PROTOCOL_NAME,
@@ -59,7 +66,6 @@ def ope_client(url):
         payload_to_post
     )
 
-    print(f'{resp_data=}')
     token = resp_data.get('session_token')
     if token is None:
         raise Exception('No session token received')
@@ -95,15 +101,12 @@ def ope_client(url):
             payload_to_post['payload']['ephemerals'][f'ephemeral_{i}_{j}'] = \
                 route_ut.mcl_to_str(client_peph)
 
-    print(f'{payload_to_post["payload"]=}')
     resp_data = post_action(
         url,
         PROTOCOL_NAME,
         PROTOCOL_ACTIONS[1],
         payload_to_post
     )
-
-    print(f'{resp_data=}')
 
     ####
     #### Decryption of the selected polynomial points
@@ -127,10 +130,10 @@ def ope_client(url):
         needed_point_ciphertext_bytes = bytes.fromhex(
             ciphertexts[ciphertext_idx]
         )
-        print(f'Getting point number {needed_point_ciphertext_bytes=}')
+        print(f'Getting point number {ciphertext_idx}: {needed_point_ciphertext_bytes=}')
 
         keys = []
-        print(f'{ciphertexts=}')
+        # print(f'{ciphertexts=}')
         for j in range(max_index_bit_len):
             ciphertexts_keys = resp_data['payload'][f'ciphertexts_{i}_{j}']
             ciphertexts_keys_bytes = [bytes.fromhex(
@@ -158,11 +161,11 @@ def ope_client(url):
         )
         interpolation_set.append(decrypted_point)
     
-    print(f'{interpolation_set=}')
     interpolation_set = [
         route_ut.mcl_from_bytes(point, mcl.Fr) for point in interpolation_set
     ]
     print(f'{len(interpolation_set)=}')
+    print(f'{interpolation_set=}')
 
     result = ope_client.eval_result_polynomial(
         interpolation_set
