@@ -27,7 +27,16 @@ def ope_actions(ses_token,
                 gl.OPE_MASK_POLY_DEGREE,
                 gl.OPE_DEFAULT_SERVER_SEED + '1'
             )
-    
+
+        ### Test prints
+        # Print with red color
+
+        alpha = mcl.Fr()
+        alpha.setInt(gl.OPE_TEST_ALPHA)
+        print(f'\033[91m THE ANSWER SHOULD BE {main_polynomial(alpha)=}\033[0m')
+
+        ### End of test prints
+
         query_points = client_payload.get('query_points')
         print(f'{query_points=}')
         # query_points is a dict of values looking like this:

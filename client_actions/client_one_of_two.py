@@ -9,9 +9,7 @@ from . import post_action
 
 def one_of_two_client(connection_url):
     message_to_get = 0
-    client = ot.OneOfTwoClient(
-        gl.GENERATOR,
-        message_to_get)
+    generator = gl.GENERATOR
 
     PROTOCOL_NAME = gl.Protocols.ONE_OF_TWO.value
     PROTOCOL_ACTIONS = gl.PROTOCOL_SPECS[PROTOCOL_NAME]['actions']
@@ -30,13 +28,18 @@ def one_of_two_client(connection_url):
 
     server_public_ephemeral = route_utils.mcl_from_str(
         resp_data.get('payload').get('A'), mcl.G1)
-    client.gen_ephemerals(server_public_ephemeral)
-    client_public_ephemeral = client.get_public_ephemeral()
+
+    (_, client_peph, enc_key) = \
+        ot.OneOfTwoClient.gen_ephemerals_and_enc_key(
+            generator,
+            server_public_ephemeral,
+            message_to_get
+        )
 
     token = resp_data.get('session_token')
     payload_to_post['session_token'] = token
     payload_to_post['payload']['B'] = route_utils.mcl_to_str(
-        client_public_ephemeral)
+        client_peph)
 
     resp_data = post_action(connection_url,
                             PROTOCOL_NAME,
@@ -50,8 +53,8 @@ def one_of_two_client(connection_url):
     ciphertexts_in_bytes = [bytes.fromhex(
         hex_string) for hex_string in ciphertexts_in_hex]
 
-    decrypted_hex_bytes = client\
-        .decrypt(ciphertexts_in_bytes)\
+    decrypted_hex_bytes = ot.OneOfTwoClient\
+        .decrypt(ciphertexts_in_bytes, enc_key, message_to_get)\
         .decode('utf-8')
 
     print(f'Message: {decrypted_hex_bytes}')

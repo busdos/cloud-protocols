@@ -198,7 +198,7 @@ class OPEClient():
     ):
         """
         Generates a set of points which will be present on random
-        postiions (hence the title "submerged")in the set of query
+        postiions (hence the title "submerged") in the set of query
         points sent to the cloud.
         """
         self.query_point_indices = self.rand.sample(
@@ -247,13 +247,6 @@ class OPEClient():
         the Client wants to evaluate the main 
         polynomial).
         """
-        # Out of points received from the Cloud,
-        # select only the indices listed in
-        # self.query_point_indices
-        interpolation_y_values = list(
-            itemgetter(*self.query_point_indices)(cloud_response_points)
-        )
-
         iterpolation_x_values = list(
             itemgetter(*self.query_point_indices)
             (self.query_x_values)
@@ -262,7 +255,7 @@ class OPEClient():
         interpolation_set = [
             (x, y)
             for x, y in zip(
-                iterpolation_x_values, interpolation_y_values
+                iterpolation_x_values, cloud_response_points
             )
         ]
 
@@ -271,6 +264,3 @@ class OPEClient():
         return OPEPolynomial.lagrange_interpolation(
             zero, interpolation_set
         )
-
-
-

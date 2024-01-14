@@ -42,8 +42,6 @@ def one_of_n_client(connection_url):
     client_ciphertext = bytes.fromhex(
         all_ciphertexts[message_to_get])
     
-    client = ot.OneOfTwoClient(gl.GENERATOR, 0)
-
     # Every bit of the message index (i.e. either
     # 0 or 1) is the index of the key to return from
     # one-of-two protocol
@@ -76,12 +74,16 @@ def one_of_n_client(connection_url):
         big_a = route_utils.mcl_from_str(
             resp_data['payload']['A'], mcl.G1)
 
-        client.set_choice(key_indices[key_idx])
-        client.gen_ephemerals(big_a)
-        client_public_ephemeral = client.get_public_ephemeral()
+        key_choice = key_indices[key_idx]
+        (_, client_peph, enc_key) = \
+            ot.OneOfTwoClient.gen_ephemerals_and_enc_key(
+                gl.GENERATOR,
+                big_a,
+                key_choice
+            )
 
         one_of_two_payload['payload']['B'] = route_utils.mcl_to_str(
-            client_public_ephemeral)
+            client_peph)
         one_of_two_payload['payload']['key_idx'] = key_idx
 
         resp_data = post_action(
@@ -91,7 +93,11 @@ def one_of_n_client(connection_url):
         ciphertext_bytes = [bytes.fromhex(
             hex_string) for hex_string in resp_data['payload']['ciphertexts']]
         
-        key = client.decrypt(ciphertext_bytes)
+        key = ot.OneOfTwoClient.decrypt(
+            ciphertext_bytes,
+            enc_key,
+            key_choice
+        )
         print(f"key[{key_idx}]: {key}")
         keys.append(key)
 

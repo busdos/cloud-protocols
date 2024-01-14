@@ -22,6 +22,8 @@ OPE_BIG_N = OPE_SMALL_N * OPE_SECURITY_PARAM_M
 OPE_DEFAULT_CLIENT_SEED = 'client_seed'
 OPE_DEFAULT_SERVER_SEED = 'server_seed'
 
+OPE_TEST_ALPHA = 10
+
 class Protocols(Enum):
     ONE_OF_TWO = 'one_of_two'
     ONE_OF_N = 'one_of_n'

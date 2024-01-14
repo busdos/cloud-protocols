@@ -70,29 +70,28 @@ def ope_client(url):
     print(f'{len(cloud_ephemerals)=}')
     max_index_bit_len = gl.OPE_BIG_N.bit_length()
 
-    client = ot.OneOfTwoClient(gl.GENERATOR, 0)
     decryption_key_indices = {}
     ot_ephemerals = []
     payload_to_post['payload'].pop('query_points')
     payload_to_post['payload']['ephemerals'] = {}
     for i, subm in enumerate(submerged_ids):
         ot_idx_rev_bits = format(subm, 'b').zfill(max_index_bit_len)[::-1]
-
-        decryption_key_indices[f'{subm}'] = [
+        decryption_key_indices[subm] = [
             int(bit) for bit in ot_idx_rev_bits
         ]
-    
+
         for j in range(max_index_bit_len):
-            client.set_choice(decryption_key_indices[subm][j])
-            client.gen_ephemerals(
-                route_ut.mcl_from_str(
-                    cloud_ephemerals[i * max_index_bit_len + j],
-                    mcl.G1
-                )
+            choice = decryption_key_indices[subm][j]
+            (_, client_peph, enc_key) = \
+                ot.OneOfTwoClient.gen_ephemerals_and_enc_key(
+                    gl.GENERATOR,
+                    route_ut.mcl_from_str(
+                        cloud_ephemerals[i * max_index_bit_len + j],
+                        mcl.G1
+                    ),
+                    choice
             )
-            client_peph = client.get_public_ephemeral()
-            client_seph = client.get_secret_ephemeral()
-            ot_ephemerals.append((client_seph, client_peph))
+            ot_ephemerals.append((enc_key, client_peph))
             payload_to_post['payload']['ephemerals'][f'ephemeral_{i}_{j}'] = \
                 route_ut.mcl_to_str(client_peph)
 
@@ -120,22 +119,52 @@ def ope_client(url):
     #                                  and the other if it is 1
     # }
 
-    # for i in range(gl.OPE_SMALL_N):
-    #     ciphertexts = resp_data['payload'][f'ciphertexts_{i}']
-    #     print(f'{ciphertexts=}')
-    #     for j in range(max_index_bit_len):
-    #         ciphertexts_keys = resp_data['payload'][f'ciphertexts_{i}_{j}']
-    #         print(f'{ciphertexts_keys=}')
-    #         key_idx = decryption_key_indices[i][j]
-    #         print(f'{key_idx=}')
-    #         key = route_ut.mcl_from_str(
-    #             ciphertexts_keys[key_idx],
-    #             mcl.Fr
-    #         )
-    #         ciphertexts[j] = route_ut.mcl_from_str(
-    #             ciphertexts[j],
-    #             mcl.GT
-    #         )
-    #         ciphertexts[j] = prot_ut.decrypt(ciphertexts[j], key)
+    interpolation_set = []
+    print(f'Interested in points: {submerged_ids}')
+    for i in range(gl.OPE_SMALL_N):
+        ciphertexts = resp_data['payload'][f'ciphertexts_{i}']
+        ciphertext_idx = submerged_ids[i]
+        needed_point_ciphertext_bytes = bytes.fromhex(
+            ciphertexts[ciphertext_idx]
+        )
+        print(f'Getting point number {needed_point_ciphertext_bytes=}')
 
-    #     resp_data['payload'][f'ciphertexts_{i}'] = ciphertexts
+        keys = []
+        print(f'{ciphertexts=}')
+        for j in range(max_index_bit_len):
+            ciphertexts_keys = resp_data['payload'][f'ciphertexts_{i}_{j}']
+            ciphertexts_keys_bytes = [bytes.fromhex(
+                hex_string) for hex_string in ciphertexts_keys]
+    
+            # print(f'{ciphertexts_keys=}')
+            key_idx = decryption_key_indices[ciphertext_idx][j]
+            # print(f'{key_idx=}')
+            (enc_key, client_peph) = ot_ephemerals[i * max_index_bit_len + j]
+            # print(f'{enc_key=}')
+            # print(f'{client_peph=}')
+            decrypted_key = ot.OneOfTwoClient.decrypt(
+                ciphertexts_keys_bytes,
+                enc_key,
+                key_idx
+            )
+            # print(f'key{decrypted_key=}')
+            keys.append(decrypted_key)
+
+        # Decrypt the individual point from ciphertexts
+        # using the keys
+        decrypted_point = ot.OneOfTwoClient.batch_decrypt(
+            needed_point_ciphertext_bytes,
+            keys
+        )
+        interpolation_set.append(decrypted_point)
+    
+    print(f'{interpolation_set=}')
+    interpolation_set = [
+        route_ut.mcl_from_bytes(point, mcl.Fr) for point in interpolation_set
+    ]
+    print(f'{len(interpolation_set)=}')
+
+    result = ope_client.eval_result_polynomial(
+        interpolation_set
+    )
+    print(f'Evaluation result: {result=}')

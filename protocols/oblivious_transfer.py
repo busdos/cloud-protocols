@@ -95,51 +95,41 @@ class OTCloud():
 
 
 class OneOfTwoClient():
-    def __init__(self, generator: G1, choice_idx: int):
-        assert choice_idx in [0, 1],\
-            "Choice index must be 0 or 1."
-        self.choice_idx = choice_idx
-        self.generator = generator
-        self.secret_ephemeral = Fr()
-        self.public_ephemeral = G1()
-
-    def set_choice(self, choice_idx: int):
-        assert choice_idx in [0, 1],\
-            "Choice index must be 0 or 1."
-        self.choice_idx = choice_idx
-
-    def gen_ephemerals(self, cloud_pub_ephemeral: G1):
-        self.secret_ephemeral = Fr.rnd()
-        self.public_ephemeral = self.generator * self.secret_ephemeral
+    @staticmethod
+    def gen_ephemerals_and_enc_key(
+        generator: G1,
+        cloud_pub_ephemeral: G1,
+        choice_idx: int
+    ) -> (Fr, G1, bytes):
+        secret_ephemeral = Fr.rnd()
+        public_ephemeral = generator * secret_ephemeral
         # If second message is chosen...
-        if self.choice_idx == 1:
-            self.public_ephemeral += cloud_pub_ephemeral
-        
+        if choice_idx == 1:
+           public_ephemeral += cloud_pub_ephemeral
+
         # Stringifying is important because implicit conversion of and object to bytes
         # for hashing might not work the same on clinet and server side
-        self.encryption_key = (cloud_pub_ephemeral * self.secret_ephemeral).getStr()
+        encryption_key = (cloud_pub_ephemeral * secret_ephemeral).getStr()
 
-    def get_public_ephemeral(self):
-        return self.public_ephemeral
+        return (secret_ephemeral, public_ephemeral, encryption_key)
 
-    def get_secret_ephemeral(self):
-        """
-        Returns the secret ephemeral which was computed considering the
-        choice of the client and cloud's public ephemeral. For cases when
-        secret ephemerals need to be buffered.
-        """
-        return self.secret_ephemeral
-
-    def decrypt(self, ciphertexts: list[bytes]):
+    @staticmethod
+    def decrypt(
+        ciphertexts: list[bytes],
+        encryption_key: bytes,
+        choice_idx: int
+    ):
         assert len(ciphertexts) == 2,\
             "Number of ciphertexts must be 2."
         
-        chosen_ciphertext = ciphertexts[self.choice_idx]
+        chosen_ciphertext = ciphertexts[choice_idx]
         encryption_str = ut.concatenated_hashes(
                len(chosen_ciphertext),
-               self.encryption_key)
+               encryption_key)
+        
+        print(f"operand types: {type(ciphertexts[choice_idx])=}, {type(encryption_str)=}")
 
-        return ut.decrypt(ciphertexts[self.choice_idx],
+        return ut.decrypt(ciphertexts[choice_idx],
                           encryption_str)
 
     # [TODO] Change the structure of this clas to merge decrypt and batch_decrypt
