@@ -6,6 +6,7 @@ from db_model import MESSAGES, MESSAGES_ONE_OF_TWO, temp_db
 from globals import PROTOCOL_SPECS, Protocols
 
 from .route_oblivious_transfer import one_of_n_actions, one_of_two_actions
+from .route_oblivious_polynomial_evaluation import ope_actions
 from .route_utils import generate_token
 
 bp = Blueprint("protocols", __name__)
@@ -26,14 +27,24 @@ def construct_db_data(ses_token,
                       client_payload):
     if protocol == Protocols.ONE_OF_TWO.value:
         messages = temp_db[ses_token]["messages"]
-        return one_of_two_actions(ses_token,
-                                  action,
-                                  client_payload,
-                                  messages)
+        return one_of_two_actions(
+            ses_token,
+            action,
+            client_payload,
+            messages
+        )
     elif protocol == Protocols.ONE_OF_N.value:
-        return one_of_n_actions(ses_token,
-                                action,
-                                client_payload)
+        return one_of_n_actions(
+            ses_token,
+            action,
+            client_payload
+        )
+    elif protocol == Protocols.OPE.value:
+        return ope_actions(
+            ses_token,
+            action,
+            client_payload
+        )
     else:
         current_app.logger.error(f"Unknown protocol {protocol=}")
         return None
@@ -60,6 +71,7 @@ def generic_protocol_route_post(protocol, action):
     is_init = action == PROTOCOL_SPECS[protocol]["init_action"]
     current_app.logger.info(f"{protocol} Current action: {pformat(action)};"
                             f" is init action: {pformat(is_init)}")
+
     if action == PROTOCOL_SPECS[protocol]["init_action"]:
         session_token = generate_token()
         temp_db[session_token] = {
@@ -70,9 +82,7 @@ def generic_protocol_route_post(protocol, action):
     else:
         session_token = data.get("session_token")
 
-    temp_db[session_token][action] = {
-        "keys": []
-    }
+    temp_db[session_token][action] = {}
 
     # db_data is a list of pairs; pairs are defined differently
     # for each protocol
@@ -87,9 +97,14 @@ def generic_protocol_route_post(protocol, action):
         # returns some data to be stored in the DB
         if db_data is not None:
             curr_counter = temp_db[session_token]["counter"]
-            for key0, key1 in db_data:
-                temp_db[session_token][action]["keys"].append((key0, key1))
-                curr_counter += 1
+            # db_data is a dict, so we just connect the node to the
+            # general "graph"
+            # Node is a { 'name': {values} } where values can be
+            # anything (dict, list, etc.)
+            # print(f"{db_data=}")
+            temp_db[session_token][action].update(db_data)
+            curr_counter += 1
+
             temp_db[session_token]["counter"] = curr_counter
 
     if not is_close_action:

@@ -196,6 +196,11 @@ class OPEClient():
             size_of_interpolation_set: int,
             number_of_points: int
     ):
+        """
+        Generates a set of points which will be present on random
+        postiions (hence the title "submerged")in the set of query
+        points sent to the cloud.
+        """
         self.query_point_indices = self.rand.sample(
             range(number_of_points),
             size_of_interpolation_set

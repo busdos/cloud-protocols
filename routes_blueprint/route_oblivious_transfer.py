@@ -51,18 +51,20 @@ def one_of_two_actions(ses_token,
             globals.GENERATOR)
 
         # (small a, big A)
-        db_data = [(mcl_to_str(seph), mcl_to_str(peph))]
+        db_data = {
+            'oo2_ephemerals': (mcl_to_str(seph), mcl_to_str(peph))
+        }
         response_payload = {
             'A': mcl_to_str(peph)
         }
     elif action == 'get_two_ciphertexts':
         assert messages is not None
         # Get keys stored in the previous step
-        ses_data = temp_db[ses_token]['get_A']['keys']
-        
+        ses_data = temp_db[ses_token]['get_A']['oo2_ephemerals']
+
         print(f'{ses_data=}')
-        seph = mcl_from_str(ses_data[0][0], mcl.Fr)
-        peph = mcl_from_str(ses_data[0][1], mcl.G1)
+        seph = mcl_from_str(ses_data[0], mcl.Fr)
+        peph = mcl_from_str(ses_data[1], mcl.G1)
         client_eph = mcl_from_str(client_payload.get('B'), mcl.G1)
 
         # Since we want two ciphertexts, number
@@ -93,10 +95,12 @@ def one_of_n_actions(ses_token,
             oblivious_transfer_encrypt_messages(messages)
 
         # db_data are all the key pairs for the messages
-        db_data = [
-            (k[0], k[1])
-            for k in keys
-        ]
+        db_data = {
+            'keys' : [
+                (k[0], k[1])
+                for k in keys
+            ]
+        }
 
         response_payload = {
             'ciphertexts': [cip.hex() for cip in ciphertexts]

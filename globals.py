@@ -71,10 +71,10 @@ PROTOCOL_SPECS = {
     },
     Protocols.OPE.value: {
         'actions': [
-            'get_poly_points_and_ephemerals',
+            'get_server_ephemerals',
             'perform_n_of_big_n_ot',
         ],
-        'init_action': 'get_poly_points_and_ephemerals',
+        'init_action': 'get_server_ephemerals',
         'close_action': 'perform_n_of_big_n_ot',
     }
 }

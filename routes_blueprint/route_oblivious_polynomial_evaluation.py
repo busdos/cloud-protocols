@@ -5,33 +5,47 @@ uses 1-of-2 and 1-of-n oblivious transfers.
 """
 from protocols import oblivious_polynomial_evaluation as ope
 from db_model import temp_db
-from route_oblivious_transfer import oblivious_transfer_encrypt_messages
 from protocols import oblivious_transfer as ot
+from .route_oblivious_transfer import oblivious_transfer_encrypt_messages
 
-import route_utils as ut
+from .route_utils import mcl_from_str, mcl_to_str
 import globals as gl
+import mcl
 
 def ope_actions(ses_token,
                 action,
                 client_payload):
-    if action == 'get_poly_points_and_ephemerals':
-        # [TODO] not sent in the request, but should be
-        # What's more it should be a separate request
+    if action == 'get_server_ephemerals':
         main_polynomial = \
             ope.OPECloud.gen_main_polynomial(
                 gl.OPE_MAIN_POLY_DEGREE,
                 gl.OPE_DEFAULT_SERVER_SEED
             )
     
-        mask_poly_degree = gl.OPE_QUERY_POLY_DEGREE * \
-            gl.OPE_MAIN_POLY_DEGREE
         mask_polynomial = \
             ope.OPECloud.gen_mask_polynomial(
-                mask_poly_degree,
+                gl.OPE_MASK_POLY_DEGREE,
                 gl.OPE_DEFAULT_SERVER_SEED + '1'
             )
     
         query_points = client_payload.get('query_points')
+        print(f'{query_points=}')
+        # query_points is a dict of values looking like this:
+        # {
+        #   'point_0_x': x_0,
+        #   'point_0_y': y_0,
+        #   ...
+        #   'point_<N-1>_x': x_n,
+        #   'point_<N-1>_y': y_n,
+        # }
+        query_points = [
+            (
+                mcl_from_str(query_points[f'point_{i}_x'], mcl.Fr),
+                mcl_from_str(query_points[f'point_{i}_y'], mcl.Fr)
+            )
+            for i in range(len(query_points) // 2)
+        ]
+
         # Returns only y-values, so the order of the
         # points is assumed to be the same as in the
         # request
@@ -43,26 +57,41 @@ def ope_actions(ses_token,
             )
 
         assert len(query_points) == len(masked_poly_values)
-        # [TODO] insert ephemerals into the response
-        # payload and databsae 
-        # [TODO] uncomment code below
 
-    #     db_data = [
-    #         (query_points[i][0], masked_poly_values[i])
-    #         for i in range(len(query_points))
-    #     ]
-    #     assert len(db_data) == len(masked_poly_values)
+        # Generate gl.OPE_SMALL_N*bit_length(number_of_queried_points) public
+        # ephemerals for the client to use in the OT protocol
+        ephemerals = []
+        for i in range(gl.OPE_SMALL_N):
+            for j in range(len(query_points).bit_length()):
+                seph, peph = ot.OTCloud.gen_ephemerals(gl.GENERATOR)
+                ephemerals.append((seph, peph))
 
-    #     response_payload = {
-    #         'computation_confirmation': True,
-    #     }
-    # elif action == 'perform_n_of_big_n_ot':
+        db_data = {
+            'query_points': [],
+            'ot_ephemerals': [],
+        }
+        for i in range(len(query_points)):
+            db_data['query_points'].append(
+                (mcl_to_str(query_points[i][0]), mcl_to_str(masked_poly_values[i]))
+            )
+        for i in range(len(ephemerals)):
+            db_data['ot_ephemerals'].append(
+                (mcl_to_str(ephemerals[i][0]), mcl_to_str(ephemerals[i][1]))
+            )
+
+        response_payload = {
+            'pub_ephemerals': [
+                mcl_to_str(ephemerals[i][1])
+                for i in range(len(ephemerals))
+            ]
+        }
+    elif action == 'perform_n_of_big_n_ot':
         client_ephemerals = client_payload.get('ephemerals')
 
         # comp_res = temp_db[ses_token]['get_masked_poly_points']['keys']
         # y_values = [point[1] for point in comp_res]
-        # y_values_strs = [ut.mcl_to_str(y) for y in y_values]
-        y_values_strs = [ut.mcl_to_str(y) for y in masked_poly_values]
+        # y_values_strs = [mcl_to_str(y) for y in y_values]
+        y_values_strs = [mcl_to_str(y) for y in masked_poly_values]
 
         total_num_of_points = len(y_values_strs)
         max_bits_in_point_idx = total_num_of_points.bit_length()
@@ -97,7 +126,7 @@ def ope_actions(ses_token,
             for bit_i in range(max_bits_in_point_idx):
                 seph, peph = ot.OTCloud.gen_ephemerals(gl.GENERATOR)
                 client_eph = client_ephemerals[i][bit_i]
-                str_i_keys = [ut.mcl_to_str(k) for k in i_keys[bit_i]]
+                str_i_keys = [mcl_to_str(k) for k in i_keys[bit_i]]
                 _, k_ciphertexts = oblivious_transfer_encrypt_messages(
                     str_i_keys,
                     seph,

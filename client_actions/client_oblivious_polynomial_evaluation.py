@@ -49,36 +49,42 @@ def ope_client(url):
     for (i, p) in enumerate(query_points):
         payload_to_post['payload']['query_points'][f'point_{i}_x'] = route_ut.mcl_to_str(p[0])
         payload_to_post['payload']['query_points'][f'point_{i}_y'] = route_ut.mcl_to_str(p[1])
-    
+
     # print(f'{payload_to_post["payload"]["query_points"]=}')
 
-    # [TODO] post the payload here to get the server's
-    # ephemerals
-
-    # ### Generation of ephemerals for OT ###
-    max_index_bit_len = gl.OPE_BIG_N.bit_length()
-    num_of_ephemerals = gl.OPE_SMALL_N * max_index_bit_len
-
-    client = ot.OneOfTwoClient(gl.GENERATOR, 0)
-    decryption_key_indices = {}
-    for i, subm in enumerate(submerged_ids):
-        ot_idx_rev_bits = format(subm, 'b').zfill(max_index_bit_len)[::-1]
-
-        decryption_key_indices[f'{subm}'] = [int(bit) for bit in ot_idx_rev_bits]
-    
-        for j in range(max_index_bit_len):
-            client.set_choice(decryption_key_indices[f'{subm}'][j])
-            client.gen_ephemerals()
-            client_ephemeral = client.get_public_ephemeral()
-            payload_to_post['payload'][f'ephemeral_{i}_{j}'] = route_ut.mcl_to_str(client_ephemeral)
-
-    print(f'{payload_to_post["payload"]=}')
     resp_data = post_action(
         url,
         PROTOCOL_NAME,
         PROTOCOL_ACTIONS[0],
         payload_to_post
     )
+
+    print(f'{resp_data=}')
+
+    # ### Generation of ephemerals for OT ###
+    # max_index_bit_len = gl.OPE_BIG_N.bit_length()
+    # num_of_ephemerals = gl.OPE_SMALL_N * max_index_bit_len
+
+    # client = ot.OneOfTwoClient(gl.GENERATOR, 0)
+    # decryption_key_indices = {}
+    # for i, subm in enumerate(submerged_ids):
+    #     ot_idx_rev_bits = format(subm, 'b').zfill(max_index_bit_len)[::-1]
+
+    #     decryption_key_indices[f'{subm}'] = [int(bit) for bit in ot_idx_rev_bits]
+    
+    #     for j in range(max_index_bit_len):
+    #         client.set_choice(decryption_key_indices[f'{subm}'][j])
+    #         client.gen_ephemerals()
+    #         client_ephemeral = client.get_public_ephemeral()
+    #         payload_to_post['payload'][f'ephemeral_{i}_{j}'] = route_ut.mcl_to_str(client_ephemeral)
+
+    # print(f'{payload_to_post["payload"]=}')
+    # resp_data = post_action(
+    #     url,
+    #     PROTOCOL_NAME,
+    #     PROTOCOL_ACTIONS[0],
+    #     payload_to_post
+    # )
 
     # print(f'{resp_data=}')
 
