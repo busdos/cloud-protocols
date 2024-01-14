@@ -11,7 +11,33 @@ from protocols import oblivious_transfer as ot
 
 from .route_utils import mcl_from_str, mcl_to_str
 
-TWO = 2
+# [TODO] probably has to be part of the Cloud class
+def oblivious_transfer_encrypt_messages(
+    messages: list[str],
+    cloud_seph = None,
+    cloud_peph = None,
+    client_peph = None
+) -> (list[bytes], list[bytes]):
+    if len(messages) == 2:
+        assert cloud_seph is not None
+        assert cloud_peph is not None
+        assert client_peph is not None
+
+    longest_msg_len = len(
+        max(messages,
+        key=len))
+
+    keys = ot.OTCloud.compute_keys(
+        len(messages),
+        longest_msg_len,
+        client_peph,
+        cloud_seph,
+        cloud_peph)
+
+    ciphertexts = ot.OTCloud.encrypt_messages(
+        longest_msg_len, keys, messages)
+
+    return keys, ciphertexts
 
 # [TODO] hardcoded strings can be references to global
 # definition of the protocol flow
@@ -39,19 +65,14 @@ def one_of_two_actions(ses_token,
         peph = mcl_from_str(ses_data[0][1], mcl.G1)
         client_eph = mcl_from_str(client_payload.get('B'), mcl.G1)
 
-        longest_msg_len = len(
-            max(messages,
-            key=len))
-
-        keys = ot.OTCloud.compute_keys(
-            TWO,
-            longest_msg_len,
-            client_eph,
+        # Since we want two ciphertexts, number
+        # of messages must be 2
+        assert len(messages) == 2
+        _, ciphertexts = oblivious_transfer_encrypt_messages(
+            messages,
             seph,
-            peph)
-
-        ciphertexts = ot.OTCloud.encrypt_messages(
-            longest_msg_len, keys, messages)
+            peph,
+            client_eph)
 
         db_data = None
         response_payload = {
@@ -67,18 +88,9 @@ def one_of_n_actions(ses_token,
     if action == 'get_ciphertexts':
         messages = temp_db[ses_token]['messages']
         print(f'{messages=}')
-        longest_msg_len = len(
-            max(messages,
-            key=len))
 
-        keys = ot.OTCloud.compute_keys(
-            len(messages),
-            longest_msg_len)
-
-        ciphertexts = ot.OTCloud.encrypt_messages(
-            longest_msg_len,
-            keys,
-            messages)
+        keys, ciphertexts = \
+            oblivious_transfer_encrypt_messages(messages)
 
         # db_data are all the key pairs for the messages
         db_data = [

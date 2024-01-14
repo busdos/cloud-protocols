@@ -5,10 +5,27 @@ import mcl
 _SEC_PAR = b'test'
 GENERATOR = mcl.G1.hashAndMapTo(_SEC_PAR)
 
+# Security paramters and contants for oblivious
+# polynomial evaluation protocol. For meaning of
+# the parameters see the OPEClient class comments.
+#
+# [TODO] move somewhere else or integrate with
+# the protocol
+OPE_MAIN_POLY_DEGREE = 10
+OPE_QUERY_POLY_DEGREE = 5
+OPE_MASK_POLY_DEGREE = OPE_QUERY_POLY_DEGREE * OPE_MAIN_POLY_DEGREE
+
+OPE_SECURITY_PARAM_M = 5
+OPE_SMALL_N = OPE_QUERY_POLY_DEGREE * OPE_MAIN_POLY_DEGREE + 1
+OPE_BIG_N = OPE_SMALL_N * OPE_SECURITY_PARAM_M
+
+OPE_DEFAULT_CLIENT_SEED = 'client_seed'
+OPE_DEFAULT_SERVER_SEED = 'server_seed'
 
 class Protocols(Enum):
     ONE_OF_TWO = 'one_of_two'
     ONE_OF_N = 'one_of_n'
+    OPE = 'oblivious_polynomial_evaluation'
 
     @classmethod
     def has_value(cls, value):
@@ -51,5 +68,13 @@ PROTOCOL_SPECS = {
         ],
         'init_action': 'get_ciphertexts',
         'close_action': 'done'
+    },
+    Protocols.OPE.value: {
+        'actions': [
+            'get_poly_points_and_ephemerals',
+            'perform_n_of_big_n_ot',
+        ],
+        'init_action': 'get_poly_points_and_ephemerals',
+        'close_action': 'perform_n_of_big_n_ot',
     }
 }
