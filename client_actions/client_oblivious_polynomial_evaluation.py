@@ -145,10 +145,10 @@ def ope_client(url):
             (enc_key, client_peph) = ot_ephemerals[i * max_index_bit_len + j]
             # print(f'{enc_key=}')
             # print(f'{client_peph=}')
-            decrypted_key = ot.OneOfTwoClient.decrypt(
-                ciphertexts_keys_bytes,
-                enc_key,
-                key_idx
+            print(f'{type(enc_key)=}, {type(ciphertexts_keys_bytes[key_idx])=}')
+            decrypted_key = ot.OneOfTwoClient.decrypt_message(
+                ciphertexts_keys_bytes[key_idx],
+                [enc_key],
             )
             # print(f'key{decrypted_key=}')
             keys.append(decrypted_key)

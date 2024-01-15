@@ -90,13 +90,12 @@ def one_of_n_client(connection_url):
             connection_url, PROTOCOL_NAME,
             PROTOCOL_ACTIONS[2], one_of_two_payload)
 
-        ciphertext_bytes = [bytes.fromhex(
+        ciphertexts_bytes = [bytes.fromhex(
             hex_string) for hex_string in resp_data['payload']['ciphertexts']]
         
-        key = ot.OneOfTwoClient.decrypt(
-            ciphertext_bytes,
-            enc_key,
-            key_choice
+        key = ot.OneOfTwoClient.decrypt_message(
+            ciphertexts_bytes[key_choice],
+            [enc_key],
         )
         print(f"key[{key_idx}]: {key}")
         keys.append(key)

@@ -54,7 +54,9 @@ def one_of_two_client(connection_url):
         hex_string) for hex_string in ciphertexts_in_hex]
 
     decrypted_hex_bytes = ot.OneOfTwoClient\
-        .decrypt(ciphertexts_in_bytes, enc_key, message_to_get)\
+        .decrypt_message(
+            ciphertexts_in_bytes[message_to_get],
+            [enc_key])\
         .decode('utf-8')
 
     print(f'Message: {decrypted_hex_bytes}')

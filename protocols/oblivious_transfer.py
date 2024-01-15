@@ -53,16 +53,34 @@ class OTCloud():
 
         return selected_keys
 
-    def _encrypt_message(encryption_key_length: int,
+    def _encrypt_message(minimal_encryption_key_len: int,
                          key_indices: list[int],
                          keys: list[(bytes, bytes)],
                          message: bytes):
         ciphertext = message
+
+        # print(f"\033[91mMessage of the same length as the key! Should not happen unless already padded! \033[0m")
+        # print(f"\033[91m{message_bytes=}\033[0m")
+
+
+        # Print with blue color
+        # print(f"\033[94mencrypt: {message_bytes=}\033[0m")
+    
+        # Adding one to enforce the padding on the original message
+        minimal_enc_str_len = minimal_encryption_key_len + 1
         for i in range(len(keys)):
             # Selecte key_indices[i]th element of the pair keys[i]
             encryption_str = ut.concatenated_hashes(
-                encryption_key_length, keys[i][key_indices[i]])
-            ciphertext = ut.encrypt(ciphertext, encryption_str)
+                minimal_enc_str_len, keys[i][key_indices[i]])
+
+            # Pad the initial message            
+            if i == 0:
+                # Append \x01 and then \x00 until
+                # the length is the same as the key
+                ciphertext = message + b"\x01" + b"\x00" * (
+                    len(encryption_str) - len(message) - 1)
+
+            ciphertext = ut.xor_bytes(ciphertext, encryption_str)
 
         return ciphertext
 
@@ -83,10 +101,11 @@ class OTCloud():
             # print(f"m_i_key_indices: {m_i_key_indices}")
 
             ciphertexts.append(
-                OTCloud._encrypt_message(longest_msg_len,
-                                         m_i_key_indices,
-                                         keys,
-                                         messages[i])
+                OTCloud._encrypt_message(
+                    longest_msg_len,
+                    m_i_key_indices,
+                    keys,
+                    messages[i])
             )
 
         return ciphertexts
@@ -112,21 +131,25 @@ class OneOfTwoClient():
         return (secret_ephemeral, public_ephemeral, encryption_key)
 
     @staticmethod
-    def decrypt(
-        ciphertexts: list[bytes],
-        encryption_key: bytes,
-        choice_idx: int
+    def decrypt_message(
+        ciphertext: bytes,
+        encryption_keys: list[bytes],
     ):
-        assert len(ciphertexts) == 2,\
-            "Number of ciphertexts must be 2."
-        
-        chosen_ciphertext = ciphertexts[choice_idx]
-        encryption_str = ut.concatenated_hashes(
-               len(chosen_ciphertext),
-               encryption_key)
-        
-        return ut.decrypt(ciphertexts[choice_idx],
-                          encryption_str)
+        for i in range(len(encryption_keys)):
+            decryption_str = ut.concatenated_hashes(
+                len(ciphertext),
+                encryption_keys[i])
+
+            ciphertext = ut.xor_bytes(ciphertext, decryption_str)
+
+        ciphertext = ciphertext.rstrip(b"\x00")
+        if ciphertext[-1:] == b'\x01':
+            ciphertext = ciphertext[:-1]
+        else:
+            print(f"\033[91mDecrypted string did not have \\x01 at the end! This should NOT happen!\033[0m")
+            print(f"\033[91m{ciphertext=}\033[0m")
+
+        return ciphertext
 
     # [TODO] Change the structure of this clas to merge decrypt and batch_decrypt
     # into one method
@@ -138,7 +161,15 @@ class OneOfTwoClient():
                 len(ciphertext),
                 key)
 
-            plaintext = ut._xor_bytes(plaintext, decryption_str)
+            plaintext = ut.xor_bytes(plaintext, decryption_str)
 
         plaintext = plaintext.rstrip(b"\x00")
+        # Remove exactly one \x01 byte from the end
+        # if it exists
+        if plaintext[-1:] == b'\x01':
+            plaintext = plaintext[:-1]
+        else:
+            print(f"\033[91m{plaintext=}\033[0m")
+            print(f"\033[91mDecrypted string did not have \\x01 at the end! This should NOT happen!\033[0m")
+
         return plaintext
