@@ -1,6 +1,6 @@
 """
 Route (server-side actions) for the oblivious
-polynomial evaluation algorithm. The algorithm uses
+polynomial evaluation algorithm. The algorithm
 uses 1-of-2 and 1-of-n oblivious transfers.
 """
 from protocols import oblivious_polynomial_evaluation as ope
@@ -12,9 +12,11 @@ from .route_utils import mcl_from_str, mcl_to_str
 import globals as gl
 import mcl
 
-def ope_actions(ses_token,
-                action,
-                client_payload):
+def ope_actions(
+    ses_token,
+    action,
+    client_payload
+):
     if action == 'get_server_ephemerals':
         main_polynomial = \
             ope.OPECloud.gen_main_polynomial(

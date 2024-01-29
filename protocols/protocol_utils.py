@@ -26,6 +26,9 @@ def concatenated_hashes(msg_len: int, key: bytes) -> bytes:
         compute_hash(key + idx.to_bytes(int_len, 'little'))
         for idx in range(num_of_blocks))
 
+#######################
+#### Byteops utils ####
+#######################
 
 def xor_bytes(ba1: bytes, ba2: bytes) -> bytes:
     assert len(ba1) == len(ba2), f'XOR {len(ba1)=} != {len(ba2)=}'
@@ -34,3 +37,6 @@ def xor_bytes(ba1: bytes, ba2: bytes) -> bytes:
     # print(f"right side: {ba2=}")
 
     return bytes([_a ^ _b for _a, _b in zip(ba1, ba2)])
+
+def is_power_of_two(n: int) -> bool:
+    return n != 0 and (n & (n - 1)) == 0

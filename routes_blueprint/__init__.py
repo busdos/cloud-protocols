@@ -7,6 +7,7 @@ from globals import PROTOCOL_SPECS, Protocols
 
 from .route_oblivious_transfer import one_of_n_actions, one_of_two_actions
 from .route_oblivious_polynomial_evaluation import ope_actions
+from .route_garbled_circuit import garbled_circuit_actions
 from .route_utils import generate_token
 
 bp = Blueprint("protocols", __name__)
@@ -45,6 +46,12 @@ def construct_db_data(ses_token,
             action,
             client_payload
         )
+    elif protocol == Protocols.GARBLED_CIRCUIT.value:
+        return garbled_circuit_actions(
+            ses_token,
+            action,
+            client_payload
+        )
     else:
         current_app.logger.error(f"Unknown protocol {protocol=}")
         return None
@@ -75,6 +82,8 @@ def generic_protocol_route_post(protocol, action):
 
     if action == PROTOCOL_SPECS[protocol]["init_action"]:
         session_token = generate_token()
+        # [TODO] not generic, depends on the protocol
+        # remove later
         default_messages = MESSAGES_ONE_OF_TWO if \
             protocol == Protocols.ONE_OF_TWO.value else \
             MESSAGES if protocol == Protocols.ONE_OF_N.value else \

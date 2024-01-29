@@ -28,6 +28,9 @@ class Protocols(Enum):
     ONE_OF_TWO = 'one_of_two'
     ONE_OF_N = 'one_of_n'
     OPE = 'oblivious_polynomial_evaluation'
+    # [TODO] change the name later
+    GARBLED_CIRCUIT = 'ot_circuit'
+    PSI = 'private_set_intersection'
 
     @classmethod
     def has_value(cls, value):
@@ -78,5 +81,21 @@ PROTOCOL_SPECS = {
         ],
         'init_action': 'get_server_ephemerals',
         'close_action': 'perform_n_of_big_n_ot',
+    },
+    Protocols.GARBLED_CIRCUIT.value: {
+        'actions': [
+            'get_cloud_ephemerals',
+            'get_encoded_values',
+        ],
+        'init_action': 'get_cloud_ephemerals',
+        'close_action': 'get_encoded_values',
+    },
+    Protocols.PSI.value: {
+        'actions': [
+            'get_a_t',
+            'done',
+        ],
+        'init_action': 'get_a_t',
+        'close_action': 'done'
     }
 }

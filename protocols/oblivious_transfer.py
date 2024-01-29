@@ -10,7 +10,7 @@ from . import protocol_utils as ut
 
 class OTCloud():
     @staticmethod
-    def gen_ephemerals(generator: G1):
+    def gen_ephemerals(generator: G1) -> (Fr, G1):
         # Only needed for 2 messages
         secret_ephemeral = Fr.rnd()
         public_ephemeral = generator * secret_ephemeral
