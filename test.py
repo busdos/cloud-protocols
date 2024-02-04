@@ -1,4 +1,8 @@
+import logging
+
 from protocols import oblivious_polynomial_evaluation as ope
+from protocols import designated_signature as desig
+
 from mcl import Fr
 import globals as gl
 
@@ -66,5 +70,27 @@ def test_ope():
 
     assert expected_result == result
 
+def test_desig():
+
+    logging.basicConfig(format='%(name)s - %(levelname)s - %(message)s')
+    signer = desig.Desig_Sign()
+    forwarder = desig.Desig_Forward()
+    verifier = desig.Desig_Ver()
+    logging.info(f'{gl.GENERATOR=}')
+    print(f'{gl.GENERATOR=}')
+
+    assert desig.PKI["signer"][1]  == gl.GENERATOR*signer.sk
+    assert desig.PKI["forwarder"][1]  == gl.GENERATOR*forwarder.sk
+
+
+    m = "123"
+    sigma = signer.sign(m)
+
+    assert forwarder.verify(sigma,m,gl.GENERATOR*signer.sk)
+    sigma_desig = forwarder.designation(sigma, desig.PKI['verifier'][1], desig.PKI['signer'][1])
+
+    assert verifier.verify(sigma_desig, m, desig.PKI['signer'][1])
+
 if __name__ == '__main__':
-    test_ope()
+    # test_ope()
+    test_desig()

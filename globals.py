@@ -2,7 +2,7 @@ from enum import Enum
 
 import mcl
 
-_SEC_PAR = b'test'
+_SEC_PAR = b'G1'
 GENERATOR = mcl.G1.hashAndMapTo(_SEC_PAR)
 
 # Security paramters and contants for oblivious
@@ -31,6 +31,8 @@ class Protocols(Enum):
     # [TODO] change the name later
     GARBLED_CIRCUIT = 'ot_circuit'
     PSI = 'private_set_intersection'
+    DESIG = 'desig'
+    DEVER = 'dever'
 
     @classmethod
     def has_value(cls, value):
@@ -96,6 +98,22 @@ PROTOCOL_SPECS = {
             'done',
         ],
         'init_action': 'get_a_t',
+        'close_action': 'done'
+    },
+    Protocols.DESIG.value: {
+        'actions': [
+            'send_sig',
+            'done',
+        ],
+        'init_action': 'send_sig',
+        'close_action': 'done'
+    },
+    Protocols.DEVER.value: {
+        'actions': [
+            'send_sig',
+            'done',
+        ],
+        'init_action': 'send_sig',
         'close_action': 'done'
     }
 }

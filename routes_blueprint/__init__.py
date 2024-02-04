@@ -7,7 +7,9 @@ from globals import PROTOCOL_SPECS, Protocols
 
 from .route_oblivious_transfer import one_of_n_actions, one_of_two_actions
 from .route_oblivious_polynomial_evaluation import ope_actions
-from .route_garbled_circuit import garbled_circuit_actions
+from .route_designated_sig_verifier import desig_verifier_actions
+from .route_designated_sig_designator import designator_actions
+
 from .route_utils import generate_token
 
 bp = Blueprint("protocols", __name__)
@@ -46,8 +48,14 @@ def construct_db_data(ses_token,
             action,
             client_payload
         )
-    elif protocol == Protocols.GARBLED_CIRCUIT.value:
-        return garbled_circuit_actions(
+    elif protocol == Protocols.DESIG.value:
+        return designator_actions(
+            ses_token,
+            action,
+            client_payload
+        )
+    elif protocol == Protocols.DEVER.value:
+        return desig_verifier_actions(
             ses_token,
             action,
             client_payload

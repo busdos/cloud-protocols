@@ -3,15 +3,16 @@ import argparse
 import client_actions.client_one_of_n as oon
 import client_actions.client_one_of_two as oo2
 import client_actions.client_oblivious_polynomial_evaluation as ope
-import client_actions.client_garbled_circuit as gc
+import client_actions.client_designated_sig_signer as desig
 import globals as gl
 
 LIST_OF_CLIENTS = {
     gl.Protocols.ONE_OF_TWO.value: oo2.one_of_two_client,
     gl.Protocols.ONE_OF_N.value: oon.one_of_n_client,
     gl.Protocols.OPE.value: ope.ope_client,
-    gl.Protocols.GARBLED_CIRCUIT.value: gc.garbled_circuit_client,
+    # gl.Protocols.GARBLED_CIRCUIT.value: gc.garbled_circuit_client,
     # "psi": psi.private_set_intersection,
+    gl.Protocols.DESIG.value: desig.desig_client
 }
 
 

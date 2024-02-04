@@ -3,6 +3,7 @@ Flask server and the SQLAlchemy database of the application.
 """
 import logging
 import os
+import argparse
 
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
@@ -15,7 +16,18 @@ DEBUG = True
 PORT = 8080
 LOGGING_FORMAT = '%(message)s'
 
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--p", dest="port", default=8080, type=int)
+    parser.add_argument("--u", dest="url", type=str)
+    return parser.parse_args()
+
+
 if __name__ == '__main__':
+    args = parse_args()
+    PORT = args.port
+    url = args.url
+
     # Configure logging
     logging.basicConfig(level=logging.DEBUG, format=LOGGING_FORMAT)
     logging.getLogger('werkzeug').setLevel(logging.DEBUG)
@@ -43,6 +55,7 @@ if __name__ == '__main__':
 
     # Load the instance config
     app.config.from_pyfile("config.py", silent=True)
+    app.config['url'] = url
 
     # [TODO] temporary json structure is used for now
     # Initialize the database and add the ability to reset it from
